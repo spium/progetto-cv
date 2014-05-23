@@ -2,16 +2,6 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/java-7-oracle-amd64"/>
-	<classpathentry kind="lib" path="lib/owlapi-distribution-3.5.0.jar" sourcepath="ext_src/owlapi-master.zip">
-		<attributes>
-			<attribute name="javadoc_location" value="http://owlapi.sourceforge.net/javadoc/"/>
-		</attributes>
-	</classpathentry>
-	<classpathentry kind="lib" path="lib/zgrviewer-0.9.0.jar" sourcepath="ext_src/zgrviewer-0.9.0-sources.jar">
-		<attributes>
-			<attribute name="javadoc_location" value="jar:platform:/resource/ProgettoCV/ext_doc/zgrviewer.zip!/"/>
-		</attributes>
-	</classpathentry>
 	<classpathentry kind="lib" path="lib/OpenCV/opencv-246.jar">
 		<attributes>
 			<attribute name="javadoc_location" value="http://docs.opencv.org/java/"/>
