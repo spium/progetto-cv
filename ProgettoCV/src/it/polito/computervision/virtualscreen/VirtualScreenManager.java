@@ -32,10 +32,14 @@ public class VirtualScreenManager implements NewFrameListener {
 	private VirtualScreenManager() {
 		vscreen = null;
 		lastFrame = null;
-		trackers = new HashSet<HandTracker>();
+		trackers = new ArrayList<HandTracker>();
 		listeners = new HashSet<VirtualScreenListener>();
 	}
 
+	/**
+	 * 
+	 * @return the {@link VirtualScreenManager} instance
+	 */
 	public static VirtualScreenManager getInstance() {
 		if(instance == null)
 			instance = new VirtualScreenManager();
@@ -61,10 +65,31 @@ public class VirtualScreenManager implements NewFrameListener {
 	 */
 	public boolean initialize(VirtualScreen vscreen, VirtualScreenInitializer vscreenInit) {
 		boolean ok = vscreenInit.initialize(vscreen, trackers);
-		if(ok) this.vscreen = vscreen;
+		if(ok)
+			this.vscreen = vscreen;
+		
 		return ok;
 	}
 
+	/**
+	 * Starts notifying listeners of new frames
+	 */
+	public void start() {
+		for(HandTracker ht : trackers) {
+			//TODO check if this works ok even with multiple trackers (see onNewFrame callback)
+			ht.addNewFrameListener(this);
+		}
+	}
+	
+	/**
+	 * Stops notifying listeners of new frames
+	 */
+	public void stop() {
+		for(HandTracker ht : trackers) {
+			ht.removeNewFrameListener(this);
+		}
+	}
+	
 	/**
 	 * 
 	 * @return true if the VirtualScreenManager has been correctly initialized, false otherwise
@@ -87,6 +112,7 @@ public class VirtualScreenManager implements NewFrameListener {
 	 * This method is automatically called in the destructor. It is safe to invoke multiple times.
 	 */
 	public void destroy() {
+		stop();
 		vscreen = null;
 		if(lastFrame != null) {
 			lastFrame.release();
