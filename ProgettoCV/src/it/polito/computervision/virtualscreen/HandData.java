@@ -1,4 +1,4 @@
-package it.polito.computervision.gestures;
+package it.polito.computervision.virtualscreen;
 
 import com.primesense.nite.Point2D;
 

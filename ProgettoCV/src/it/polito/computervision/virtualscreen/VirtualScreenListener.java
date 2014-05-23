@@ -1,7 +1,5 @@
 package it.polito.computervision.virtualscreen;
 
-import it.polito.computervision.gestures.HandData;
-
 import java.util.Collection;
 
 /**
