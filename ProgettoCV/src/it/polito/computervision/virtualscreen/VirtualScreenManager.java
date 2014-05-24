@@ -2,6 +2,7 @@ package it.polito.computervision.virtualscreen;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -55,6 +56,14 @@ public class VirtualScreenManager implements NewFrameListener {
 		// TODO get the HandTrackerFrameRef, notify listeners
 		// need to manage callbacks from multiple trackers -> only issue one callback to the screen listeners
 
+		//this should work with 1 hand tracker, don't know about multiple ones
+		if(lastFrame != null) {
+			lastFrame.release();
+			lastFrame = null;
+		}
+		
+		lastFrame = handTracker.readFrame();
+		notifyListeners();
 	}
 
 	/**
@@ -162,6 +171,7 @@ public class VirtualScreenManager implements NewFrameListener {
 				hands.add(new HandData(hd.getId(), vscreen.get2DProjection(pos), vscreen.isTouching(pos)));
 			}
 
+			hands = Collections.unmodifiableCollection(hands);
 			//notify all listeners
 			for(VirtualScreenListener l : listeners) {
 				l.onNewFrame(hands);
