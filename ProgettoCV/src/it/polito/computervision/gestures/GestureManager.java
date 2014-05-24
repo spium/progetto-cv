@@ -33,7 +33,7 @@ public class GestureManager implements VirtualScreenListener {
 	}
 
 	@Override
-	public void onNewFrame(Collection<HandData> hands) {
+	public synchronized void onNewFrame(Collection<HandData> hands) {
 		if(gestureInProgress != null) {
 			//we have a gesture in progress, only update this one
 			GestureState state = gestureInProgress.updateState(hands);

@@ -76,7 +76,7 @@ public class ActionManager implements GestureListener {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void onGestureStarted(GestureData gesture) {
+	public synchronized void onGestureStarted(GestureData gesture) {
 		GestureListener l = bindings.get(gesture.getName());
 		if(l != null)
 			l.onGestureStarted(gesture);
@@ -86,7 +86,7 @@ public class ActionManager implements GestureListener {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void onGestureInProgress(GestureData gesture) {
+	public synchronized void onGestureInProgress(GestureData gesture) {
 		GestureListener l = bindings.get(gesture.getName());
 		if(l != null)
 			l.onGestureInProgress(gesture);
@@ -96,7 +96,7 @@ public class ActionManager implements GestureListener {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void onGestureCompleted(GestureData gesture) {
+	public synchronized void onGestureCompleted(GestureData gesture) {
 		GestureListener l = bindings.get(gesture.getName());
 		if(l != null)
 			l.onGestureCompleted(gesture);
