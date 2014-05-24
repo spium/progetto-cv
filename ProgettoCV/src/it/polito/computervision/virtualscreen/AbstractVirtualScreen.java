@@ -11,8 +11,8 @@ import org.opencv.core.Size;
  */
 public abstract class AbstractVirtualScreen implements VirtualScreen {
 
-	private Size size;
-	private float depth;
+	protected Size size;
+	protected float depth;
 	
 	/**
 	 * Initializes an empty virtual screen. Size and depth are set to illegal values.

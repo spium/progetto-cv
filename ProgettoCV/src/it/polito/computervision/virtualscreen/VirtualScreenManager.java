@@ -26,6 +26,7 @@ public class VirtualScreenManager implements NewFrameListener {
 	private Collection<HandTracker> trackers;
 	private HandTrackerFrameRef lastFrame;
 	private Collection<VirtualScreenListener> listeners;
+	private boolean initialized, initDone;
 
 	/**
 	 * Creates an empty, uninitialized VirtualScreenManager
@@ -33,6 +34,7 @@ public class VirtualScreenManager implements NewFrameListener {
 	private VirtualScreenManager() {
 		vscreen = null;
 		lastFrame = null;
+		initialized = initDone = false;
 		trackers = new ArrayList<HandTracker>();
 		listeners = new HashSet<VirtualScreenListener>();
 	}
@@ -52,7 +54,7 @@ public class VirtualScreenManager implements NewFrameListener {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public void onNewFrame(HandTracker handTracker) {
+	public synchronized void onNewFrame(HandTracker handTracker) {
 		// TODO get the HandTrackerFrameRef, notify listeners
 		// need to manage callbacks from multiple trackers -> only issue one callback to the screen listeners
 
@@ -61,7 +63,7 @@ public class VirtualScreenManager implements NewFrameListener {
 			lastFrame.release();
 			lastFrame = null;
 		}
-		
+
 		lastFrame = handTracker.readFrame();
 		notifyListeners();
 	}
@@ -73,11 +75,32 @@ public class VirtualScreenManager implements NewFrameListener {
 	 * @return true if the initialization was successful, false otherwise
 	 */
 	public boolean initialize(VirtualScreen vscreen, VirtualScreenInitializer vscreenInit) {
-		boolean ok = vscreenInit.initialize(vscreen, trackers);
-		if(ok)
-			this.vscreen = vscreen;
-		
-		return ok;
+		final VirtualScreenManager vsm = this;
+		vscreenInit.initialize(vscreen, new VirtualScreenInitializer.InitializerCallback() {
+
+			@Override
+			public void initializationComplete(boolean ok, Collection<HandTracker> trackers) {
+				synchronized(vsm) {
+					if(ok) {
+						vsm.trackers.addAll(trackers);
+					}
+					vsm.initDone = true;
+					vsm.initialized = ok;
+					vsm.notify();
+				}
+			}
+		});
+
+		//wait until the init procedure is done
+		synchronized(this) {
+			while(!initDone) {
+				try {
+					wait();
+				} catch (InterruptedException e) {}
+			}
+		}
+
+		return initialized;
 	}
 
 	/**
@@ -89,7 +112,7 @@ public class VirtualScreenManager implements NewFrameListener {
 			ht.addNewFrameListener(this);
 		}
 	}
-	
+
 	/**
 	 * Stops notifying listeners of new frames
 	 */
@@ -98,13 +121,13 @@ public class VirtualScreenManager implements NewFrameListener {
 			ht.removeNewFrameListener(this);
 		}
 	}
-	
+
 	/**
 	 * 
 	 * @return true if the VirtualScreenManager has been correctly initialized, false otherwise
 	 */
 	public boolean isInitialized() {
-		return vscreen != null;
+		return initDone && initialized;
 	}
 
 	/**
@@ -114,7 +137,7 @@ public class VirtualScreenManager implements NewFrameListener {
 	public VirtualScreen getVirtualScreen() {
 		return vscreen;
 	}
-	
+
 	/**
 	 * Disposes of all resources this manager is using. After this call, the manager will be in its default uninitialized state.
 	 * It is safe to call again {@link VirtualScreenManager#initialize(VirtualScreen, VirtualScreenInitializer)} after this call.
@@ -134,8 +157,9 @@ public class VirtualScreenManager implements NewFrameListener {
 		}
 		//deregister all listeners
 		listeners.clear();
+		initialized = initDone = false;
 	}
-	
+
 	@Override
 	protected void finalize() {
 		destroy();

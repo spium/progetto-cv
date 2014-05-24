@@ -1,6 +1,7 @@
 package it.polito.computervision.virtualscreen;
 
-import com.primesense.nite.Point2D;
+import org.openni.Point2D;
+
 
 /**
  * Represents data about a specific hand.

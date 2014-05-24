@@ -1,8 +1,8 @@
 package it.polito.computervision.virtualscreen;
 
 import org.opencv.core.Size;
+import org.openni.Point2D;
 
-import com.primesense.nite.Point2D;
 import com.primesense.nite.Point3D;
 
 /**
@@ -38,7 +38,9 @@ public interface VirtualScreen {
 	 */
 	public boolean isTouching(Point3D<Float> point);
 	/**
-	 * Converts the 3D point into its 2D projection on the virtual screen
+	 * Converts the 3D point into its 2D projection on the virtual screen.
+	 * Notice that {@link Point3D} comes from com.primesense.nite package, whereas {@link Point2D} comes from org.openni package.
+	 * The reason is that {@link com.primesense.nite.Point2D}'s constructor is not visible.
 	 * @param point The 3D point to convert
 	 * @return the 2D projection of the point on the virtual screen
 	 */
