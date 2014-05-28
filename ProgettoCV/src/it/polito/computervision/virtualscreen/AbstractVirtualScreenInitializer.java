@@ -1,8 +1,5 @@
 package it.polito.computervision.virtualscreen;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.primesense.nite.HandTracker;
 
 /**
@@ -14,19 +11,15 @@ public abstract class AbstractVirtualScreenInitializer extends Thread implements
 
 	private InitializerCallback callback;
 	protected VirtualScreen vscreen;
-	protected List<HandTracker> trackers;
+	protected HandTracker tracker;
 	
 	private boolean run, initResult;
 
 	public AbstractVirtualScreenInitializer() {
-		this(2);
-	}
-
-	public AbstractVirtualScreenInitializer(int nTrackers) {
 		super();
 		vscreen = null;
 		callback = null;
-		trackers = new ArrayList<HandTracker>(nTrackers);
+		tracker = null;
 		run = true;
 	}
 
@@ -34,11 +27,12 @@ public abstract class AbstractVirtualScreenInitializer extends Thread implements
 	 * {@inheritDoc}
 	 */
 	@Override
-	public final void initialize(VirtualScreen vscreen, InitializerCallback callback) {
+	public final void initialize(VirtualScreen vscreen, HandTracker tracker, InitializerCallback callback) {
 		//do nothing if the thread has already been started
 		if(getState() == State.NEW) {
 			this.vscreen = vscreen;
 			this.callback = callback;
+			this.tracker = tracker;
 			//start this thread
 			start();
 		}
@@ -74,7 +68,7 @@ public abstract class AbstractVirtualScreenInitializer extends Thread implements
 			}
 		}
 	
-		callback.initializationComplete(initResult, trackers);
+		callback.initializationComplete(initResult);
 	}
 
 }

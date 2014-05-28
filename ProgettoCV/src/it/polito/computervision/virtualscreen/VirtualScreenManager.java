@@ -4,11 +4,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 
 import com.primesense.nite.HandTracker;
 import com.primesense.nite.HandTracker.NewFrameListener;
+import com.primesense.nite.GestureData;
+import com.primesense.nite.GestureType;
 import com.primesense.nite.HandTrackerFrameRef;
 import com.primesense.nite.Point3D;
 
@@ -20,13 +21,16 @@ import com.primesense.nite.Point3D;
  */
 public class VirtualScreenManager implements NewFrameListener {
 
+	private static final GestureType gestureType = GestureType.HAND_RAISE;
+
 	private static VirtualScreenManager instance = null;
 
 	private VirtualScreen vscreen;
-	private Collection<HandTracker> trackers;
+	private HandTracker tracker;
 	private HandTrackerFrameRef lastFrame;
 	private Collection<VirtualScreenListener> listeners;
-	private boolean initialized, initDone;
+	private boolean initialized, initDone, running;
+	private int handsToTrack, trackingHands;
 
 	/**
 	 * Creates an empty, uninitialized VirtualScreenManager
@@ -34,9 +38,11 @@ public class VirtualScreenManager implements NewFrameListener {
 	private VirtualScreenManager() {
 		vscreen = null;
 		lastFrame = null;
-		initialized = initDone = false;
-		trackers = new ArrayList<HandTracker>();
+		initialized = initDone = running = false;
+		tracker = HandTracker.create();
 		listeners = new HashSet<VirtualScreenListener>();
+		handsToTrack = -1;
+		trackingHands = 0;
 	}
 
 	/**
@@ -55,16 +61,40 @@ public class VirtualScreenManager implements NewFrameListener {
 	 */
 	@Override
 	public synchronized void onNewFrame(HandTracker handTracker) {
-		// TODO get the HandTrackerFrameRef, notify listeners
-		// need to manage callbacks from multiple trackers -> only issue one callback to the screen listeners
-
-		//this should work with 1 hand tracker, don't know about multiple ones
 		if(lastFrame != null) {
 			lastFrame.release();
 			lastFrame = null;
 		}
 
-		lastFrame = handTracker.readFrame();
+		lastFrame = tracker.readFrame();
+
+		//check for lost hands
+		for(com.primesense.nite.HandData hd : lastFrame.getHands()) {
+			if(hd.isLost()) {
+				--trackingHands;
+				tracker.startGestureDetection(gestureType);
+			}
+		}
+
+		//check for newly found hands
+		for(GestureData gd : lastFrame.getGestures()) {
+			if(gd.isComplete()) {
+				try {
+					//start the tracker
+					tracker.startHandTracking(gd.getCurrentPosition());
+					++trackingHands;
+				}
+				catch(Exception e) {
+					//do nothing... sometimes the native call will return ERROR, resulting in a runtime exception
+				}
+			}
+		}
+
+		//if we have all hands needed, stop gesture detection
+		if(trackingHands == handsToTrack) {
+			tracker.stopGestureDetection(gestureType);
+		}
+
 		notifyListeners();
 	}
 
@@ -76,14 +106,11 @@ public class VirtualScreenManager implements NewFrameListener {
 	 */
 	public boolean initialize(VirtualScreen vscreen, VirtualScreenInitializer vscreenInit) {
 		final VirtualScreenManager vsm = this;
-		vscreenInit.initialize(vscreen, new VirtualScreenInitializer.InitializerCallback() {
+		vscreenInit.initialize(vscreen, tracker, new VirtualScreenInitializer.InitializerCallback() {
 
 			@Override
-			public void initializationComplete(boolean ok, Collection<HandTracker> trackers) {
+			public void initializationComplete(boolean ok) {
 				synchronized(vsm) {
-					if(ok) {
-						vsm.trackers.addAll(trackers);
-					}
 					vsm.initDone = true;
 					vsm.initialized = ok;
 					vsm.notify();
@@ -105,11 +132,17 @@ public class VirtualScreenManager implements NewFrameListener {
 
 	/**
 	 * Starts notifying listeners of new frames
+	 * @param handsToTrack How many hands should we track
 	 */
-	public void start() {
-		for(HandTracker ht : trackers) {
-			//TODO check if this works ok even with multiple trackers (see onNewFrame callback)
-			ht.addNewFrameListener(this);
+	public void start(int handsToTrack) {
+		if(handsToTrack <= 0)
+			throw new IllegalArgumentException("handsToTrack must be > 0");
+
+		if(!running) {
+			running = true;
+			this.handsToTrack = handsToTrack;
+			tracker.startGestureDetection(gestureType);
+			tracker.addNewFrameListener(this);
 		}
 	}
 
@@ -117,8 +150,12 @@ public class VirtualScreenManager implements NewFrameListener {
 	 * Stops notifying listeners of new frames
 	 */
 	public void stop() {
-		for(HandTracker ht : trackers) {
-			ht.removeNewFrameListener(this);
+		if(running) {
+			tracker.removeNewFrameListener(this);
+			tracker.stopGestureDetection(gestureType);
+			handsToTrack = -1;
+			trackingHands = 0;
+			running = false;
 		}
 	}
 
@@ -150,11 +187,7 @@ public class VirtualScreenManager implements NewFrameListener {
 			lastFrame.release();
 			lastFrame = null;
 		}
-		//destroy hand trackers and remove them from the set
-		for(Iterator<HandTracker> i = trackers.iterator(); i.hasNext();) {
-			i.next().destroy();
-			i.remove();
-		}
+		tracker.destroy();
 		//deregister all listeners
 		listeners.clear();
 		initialized = initDone = false;
@@ -191,8 +224,10 @@ public class VirtualScreenManager implements NewFrameListener {
 			//convert to our own HandData
 			Collection<HandData> hands = new ArrayList<HandData>(handsOrig.size());
 			for(com.primesense.nite.HandData hd : handsOrig) {
-				Point3D<Float> pos = hd.getPosition();
-				hands.add(new HandData(hd.getId(), vscreen.get2DProjection(pos), vscreen.isTouching(pos)));
+				if(hd.isTracking()) {
+					Point3D<Float> pos = hd.getPosition();
+					hands.add(new HandData(hd.getId(), vscreen.get2DProjection(pos), vscreen.isTouching(pos)));
+				}
 			}
 
 			hands = Collections.unmodifiableCollection(hands);
