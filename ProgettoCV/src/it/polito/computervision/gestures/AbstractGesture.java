@@ -5,9 +5,8 @@ import it.polito.computervision.virtualscreen.HandData;
 import java.util.Collection;
 
 /**
- * Implements the common functionality of a gesture. Namely: listener management and notification, getters.
- * In particular, this class will notify {@link GestureListener}s based on the return value of the {@link #doUpdateState(Collection)} abstract method.
- * Concrete implementations will need only to override the {@link #doUpdateState(Collection)} abstract method.
+ * Implements the common functionality of a gesture (getters and {@link GestureState} update).
+ * Concrete implementations will need only to override the {@link #doUpdateState(Collection, Collection)} abstract method.
  * @author giovanni
  *
  */
@@ -28,6 +27,9 @@ public abstract class AbstractGesture implements Gesture {
 		currentState = GestureState.NOT_DETECTED;
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public GestureState updateState(Collection<HandData> hands, Collection<HandData> gestureHands) {
 		return (currentState = doUpdateState(hands, gestureHands));

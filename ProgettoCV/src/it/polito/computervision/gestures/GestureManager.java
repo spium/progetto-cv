@@ -1,17 +1,20 @@
 package it.polito.computervision.gestures;
 
 import java.util.ArrayList;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 
+import it.polito.computervision.gestures.Gesture;
 import it.polito.computervision.virtualscreen.HandData;
 import it.polito.computervision.virtualscreen.VirtualScreenListener;
 import it.polito.computervision.virtualscreen.VirtualScreenManager;
 
 /**
- * This singleton manages a set of {@link Gesture}s. Invokes on each {@link Gesture#updateState(Collection)} with the {@link HandData} of the current frame.
+ * This singleton manages a set of {@link Gesture}s. Invokes on each {@link Gesture#updateState(Collection,Collection)} with the {@link HandData} of the current frame.
  * If a {@link Gesture} is in state IN_PROGRESS, then only that gesture will be updated, and all the others will be {@link Gesture#reset()}.
+ * It also fires {@link GestureListener} callbacks based on the {@link GestureState} a {@link Gesture} is in after the update.
  * @author giovanni
  *
  */
@@ -37,6 +40,9 @@ public class GestureManager implements VirtualScreenListener {
 		return instance;
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public synchronized void onNewFrame(Collection<HandData> hands) {
 		ArrayList<HandData> gestureHands = new ArrayList<HandData>();
@@ -133,7 +139,7 @@ public class GestureManager implements VirtualScreenListener {
 	
 	/**
 	 * Registers a collection of {@link Gesture}s
-	 * @param gestures The {@link Gestures} to register
+	 * @param gestures The {@link Gesture}s to register
 	 * @see #registerGesture(Gesture)
 	 */
 	public void registerGestures(Collection<Gesture> gestures) {
@@ -163,8 +169,16 @@ public class GestureManager implements VirtualScreenListener {
 	protected void finalize() {
 		stop();
 		unregisterAllGestures();
+		listeners.clear();
 	}
 	
+	/**
+	 * Notifies listeners if necessary, based on the {@link GestureState} transition that occurred.
+	 * Live {@link Gesture}s are notified of all events. Non-live gestures are only notified of gesture completion.
+	 * @param hands The hands the gesture is tracking.
+	 * @param gesture The gesture that may be firing the event.
+	 * @param oldState The old {@link GestureState} the gesture was in.
+	 */
 	private void notifyListeners(Collection<HandData> hands, Gesture gesture, GestureState oldState) {
 		GestureState currentState = gesture.getCurrentState();
 		

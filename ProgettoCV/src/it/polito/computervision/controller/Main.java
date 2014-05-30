@@ -151,7 +151,7 @@ public class Main extends Component implements VirtualScreenListener, VideoStrea
 				else {
 					graphics.setColor(Color.RED);
 				}
-				graphics.fillRect(framePosX + pos.getX().intValue() - 3, framePosY + pos.getY().intValue() - 3, 15, 15);
+				graphics.fillRect(framePosX + pos.getX().intValue(), framePosY + pos.getY().intValue(), 15, 15);
 				
 //				System.out.println(hand);
 			}
@@ -193,8 +193,8 @@ public class Main extends Component implements VirtualScreenListener, VideoStrea
 		VideoStream stream = VideoStream.create(device, SensorType.COLOR);
 		device.setDepthColorSyncEnabled(true);
 
-		VirtualScreenManager.getInstance().start(1);
-		VirtualScreenManager.getInstance().initialize(new FlatVirtualScreen(), new StaticVirtualScreenInitializer(new Size(1,1), 900));
+		VirtualScreenManager.getInstance().start(2);
+		VirtualScreenManager.getInstance().initialize(new FlatVirtualScreen(), new StaticVirtualScreenInitializer(new Size(1,1), 800));
 		
 		GestureManager.getInstance().registerGesture(new ClickGesture());
 		GestureManager.getInstance().addGestureListener(new GestureListener() {

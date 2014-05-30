@@ -4,8 +4,10 @@
 package it.polito.computervision.actions;
 
 import java.util.HashMap;
+
 import java.util.Map;
 
+import it.polito.computervision.gestures.Gesture;
 import it.polito.computervision.gestures.GestureData;
 import it.polito.computervision.gestures.GestureListener;
 import it.polito.computervision.gestures.GestureManager;

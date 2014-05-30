@@ -4,9 +4,11 @@
 package it.polito.computervision.virtualscreen.impl;
 
 import com.primesense.nite.HandTracker;
+
 import org.openni.Point2D;
 import com.primesense.nite.Point3D;
 
+import it.polito.computervision.virtualscreen.VirtualScreen;
 import it.polito.computervision.virtualscreen.AbstractVirtualScreen;
 
 /**

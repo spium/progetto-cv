@@ -1,4 +1,6 @@
 it.polito.computervision.actions
+it.polito.computervision.controller
 it.polito.computervision.gestures
+it.polito.computervision.gestures.impl
 it.polito.computervision.virtualscreen
 it.polito.computervision.virtualscreen.impl

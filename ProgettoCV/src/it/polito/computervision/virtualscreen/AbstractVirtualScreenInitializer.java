@@ -4,6 +4,12 @@ import com.primesense.nite.HandTracker;
 
 /**
  * Provides a base implementation, taking care of thread management and callback notification.
+ * If the concrete implementation needs to run in a separate thread, this class must be constructed with the threaded parameter set to true.
+ * In this case, the {@link #startInitialization()} call will be considered asynchronous, and it will be executed in a new thread. To notify
+ * that the init procedure has completed, the {@link #initializationComplete(boolean)} method must be called from a separate thread.
+ * With the threaded parameter set to false, the {@link #startInitialization()} call will be considered synchronous (i.e. after it returns
+ * it's assumed the screen has been correctly initialized).
+ * 
  * @author giovanni
  *
  */
@@ -15,6 +21,9 @@ public abstract class AbstractVirtualScreenInitializer implements VirtualScreenI
 	
 	private boolean run, initResult, threaded;
 
+	/**
+	 * @param threaded Whether or not the initialization procedure should be run in a separate thread.
+	 */
 	public AbstractVirtualScreenInitializer(boolean threaded) {
 		super();
 		vscreen = null;
@@ -38,7 +47,8 @@ public abstract class AbstractVirtualScreenInitializer implements VirtualScreenI
 			return false;
 		}
 		else {
-			return startInitialization();
+			startInitialization();
+			return true;
 		}
 	}
 	
@@ -47,17 +57,17 @@ public abstract class AbstractVirtualScreenInitializer implements VirtualScreenI
 	 * @param ok True if initialization was successful, false otherwise
 	 */
 	protected final synchronized void initializationComplete(boolean ok) {
-		run = false;
-		initResult = ok;
-		notify();
+		if(threaded) {
+			run = false;
+			initResult = ok;
+			notify();
+		}
 	}
 	
 	/**
 	 * Subclasses should implement their initialization logic here
-	 * 
-	 * @return true if initialization has completed, false otherwise (will be notified by the callback
 	 */
-	protected abstract boolean startInitialization();
+	protected abstract void startInitialization();
 
 	@Override
 	public final void run() {
@@ -69,12 +79,10 @@ public abstract class AbstractVirtualScreenInitializer implements VirtualScreenI
 			while(run) {
 				try {
 					wait();
+					callback.initializationComplete(initResult);
 				}
 				catch(InterruptedException e) {}
 			}
 		}
-	
-		callback.initializationComplete(initResult);
 	}
-
 }
