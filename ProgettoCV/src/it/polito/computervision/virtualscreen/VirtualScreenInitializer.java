@@ -16,8 +16,10 @@ public interface VirtualScreenInitializer {
 	 * @param vscreen (In/Out) the virtual screen that needs to be initialized
 	 * @param tracker The {@link HandTracker}
 	 * @param callback The object providing the {@link InitializerCallback#initializationComplete(boolean)} callback.
+	 * 
+	 * @return true if the initialization is complete, false otherwise (the callback will be called when complete)
 	 */
-	public void initialize(VirtualScreen vscreen, HandTracker tracker, InitializerCallback callback);
+	public boolean initialize(VirtualScreen vscreen, HandTracker tracker, InitializerCallback callback);
 	
 	public interface InitializerCallback {
 		

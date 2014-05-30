@@ -49,4 +49,9 @@ public class HandData {
 	public boolean isTouching() {
 		return touching;
 	}
+	
+	@Override
+	public String toString() {
+		return id + ": (X:" + position.getX() + ",Y:" + position.getY() + ") " + touching;
+	}
 }

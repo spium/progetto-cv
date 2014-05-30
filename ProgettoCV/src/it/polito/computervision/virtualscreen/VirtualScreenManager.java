@@ -21,7 +21,7 @@ import com.primesense.nite.Point3D;
  */
 public class VirtualScreenManager implements NewFrameListener {
 
-	private static final GestureType gestureType = GestureType.HAND_RAISE;
+	private static final GestureType GESTURE_TYPE = GestureType.HAND_RAISE;
 
 	private static VirtualScreenManager instance = null;
 
@@ -72,7 +72,7 @@ public class VirtualScreenManager implements NewFrameListener {
 		for(com.primesense.nite.HandData hd : lastFrame.getHands()) {
 			if(hd.isLost()) {
 				--trackingHands;
-				tracker.startGestureDetection(gestureType);
+				tracker.startGestureDetection(GESTURE_TYPE);
 			}
 		}
 
@@ -92,10 +92,11 @@ public class VirtualScreenManager implements NewFrameListener {
 
 		//if we have all hands needed, stop gesture detection
 		if(trackingHands == handsToTrack) {
-			tracker.stopGestureDetection(gestureType);
+			tracker.stopGestureDetection(GESTURE_TYPE);
 		}
 
-		notifyListeners();
+		if(isInitialized())
+			notifyListeners();
 	}
 
 	/**
@@ -105,8 +106,13 @@ public class VirtualScreenManager implements NewFrameListener {
 	 * @return true if the initialization was successful, false otherwise
 	 */
 	public boolean initialize(VirtualScreen vscreen, VirtualScreenInitializer vscreenInit) {
+		if(!running)
+			throw new IllegalStateException("VirtualScreenManager must be started before initialization");
+
+		this.vscreen = vscreen;
+		
 		final VirtualScreenManager vsm = this;
-		vscreenInit.initialize(vscreen, tracker, new VirtualScreenInitializer.InitializerCallback() {
+		boolean sync = vscreenInit.initialize(vscreen, tracker, new VirtualScreenInitializer.InitializerCallback() {
 
 			@Override
 			public void initializationComplete(boolean ok) {
@@ -118,13 +124,20 @@ public class VirtualScreenManager implements NewFrameListener {
 			}
 		});
 
-		//wait until the init procedure is done
-		synchronized(this) {
-			while(!initDone) {
-				try {
-					wait();
-				} catch (InterruptedException e) {}
+		if(!sync) {
+
+			//wait until the init procedure is done
+			synchronized(this) {
+				while(!initDone) {
+					try {
+						wait();
+					} catch (InterruptedException e) {}
+				}
 			}
+
+		}
+		else {
+			initialized = initDone = true;
 		}
 
 		return initialized;
@@ -141,7 +154,7 @@ public class VirtualScreenManager implements NewFrameListener {
 		if(!running) {
 			running = true;
 			this.handsToTrack = handsToTrack;
-			tracker.startGestureDetection(gestureType);
+			tracker.startGestureDetection(GESTURE_TYPE);
 			tracker.addNewFrameListener(this);
 		}
 	}
@@ -152,7 +165,7 @@ public class VirtualScreenManager implements NewFrameListener {
 	public void stop() {
 		if(running) {
 			tracker.removeNewFrameListener(this);
-			tracker.stopGestureDetection(gestureType);
+			tracker.stopGestureDetection(GESTURE_TYPE);
 			handsToTrack = -1;
 			trackingHands = 0;
 			running = false;
@@ -226,7 +239,7 @@ public class VirtualScreenManager implements NewFrameListener {
 			for(com.primesense.nite.HandData hd : handsOrig) {
 				if(hd.isTracking()) {
 					Point3D<Float> pos = hd.getPosition();
-					hands.add(new HandData(hd.getId(), vscreen.get2DProjection(pos), vscreen.isTouching(pos)));
+					hands.add(new HandData(hd.getId(), vscreen.get2DProjection(pos, tracker), vscreen.isTouching(pos)));
 				}
 			}
 

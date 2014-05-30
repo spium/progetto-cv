@@ -26,18 +26,17 @@ public class StaticVirtualScreenInitializer extends AbstractVirtualScreenInitial
 	 * @param handsToTrack How many hands to track
 	 */
 	public StaticVirtualScreenInitializer(Size size, float depth) {
-		super();
+		super(false);
 		this.size = size;
 		this.depth = depth;
 	}
 
 	@Override
-	protected void startInitialization() {
+	protected boolean startInitialization() {
 		//statically initialize screen params
 		vscreen.setDepth(depth);
 		vscreen.setSize(size);
 		
-		//notify upstairs
-		super.initializationComplete(true);
+		return true;
 	}
 }
