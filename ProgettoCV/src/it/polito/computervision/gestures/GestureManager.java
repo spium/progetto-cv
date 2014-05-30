@@ -1,6 +1,8 @@
 package it.polito.computervision.gestures;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 
 import it.polito.computervision.virtualscreen.HandData;
@@ -20,9 +22,12 @@ public class GestureManager implements VirtualScreenListener {
 	private Collection<Gesture> gestures;
 	private Gesture gestureInProgress;
 	
+	private Collection<GestureListener> listeners;
+	
 	private GestureManager() {
 		gestures = new HashSet<Gesture>();
 		gestureInProgress = null;
+		listeners = new HashSet<GestureListener>();
 	}
 	
 	public static GestureManager getInstance() {
@@ -34,11 +39,16 @@ public class GestureManager implements VirtualScreenListener {
 
 	@Override
 	public synchronized void onNewFrame(Collection<HandData> hands) {
+		ArrayList<HandData> gestureHands = new ArrayList<HandData>();
 		if(gestureInProgress != null) {
 			//we have a gesture in progress, only update this one
-			GestureState state = gestureInProgress.updateState(hands);
+			GestureState oldState = gestureInProgress.getCurrentState();
+			GestureState newState = gestureInProgress.updateState(hands, gestureHands);
+			if(oldState != newState)
+				System.out.println(oldState.toString() + " => " + newState.toString());
+			notifyListeners(Collections.unmodifiableCollection(gestureHands), gestureInProgress, oldState);
 			
-			if(state != GestureState.IN_PROGRESS) {
+			if(newState != GestureState.IN_PROGRESS) {
 				//remove it if it's no longer in progress
 				gestureInProgress = null;
 			}
@@ -47,9 +57,13 @@ public class GestureManager implements VirtualScreenListener {
 			//there's no gesture in progress, update them all
 			boolean reset = false;
 			for(Gesture g : gestures) {
-				GestureState state = g.updateState(hands);
+				GestureState oldState = g.getCurrentState();
+				GestureState newState = g.updateState(hands, gestureHands);
+				if(oldState != newState)
+					System.out.println(oldState.toString() + " -> " + newState.toString());
+				notifyListeners(Collections.unmodifiableCollection(gestureHands), g, oldState);
 				
-				if(state == GestureState.IN_PROGRESS) {
+				if(newState == GestureState.IN_PROGRESS) {
 					//if a gesture is in progress, remember it, break out of the loop and reset all other gestures
 					gestureInProgress = g;
 					reset = true;
@@ -88,9 +102,7 @@ public class GestureManager implements VirtualScreenListener {
 	 * @param listener The listener to add
 	 */
 	public void addGestureListener(GestureListener listener) {
-		for(Gesture g : gestures) {
-			g.addGestureListener(listener);
-		}
+		listeners.add(listener);
 	}
 	
 	/**
@@ -98,9 +110,7 @@ public class GestureManager implements VirtualScreenListener {
 	 * @param listener The listener to remove
 	 */
 	public void removeGestureListener(GestureListener listener) {
-		for(Gesture g : gestures) {
-			g.removeGestureListener(listener);
-		}
+		listeners.remove(listener);
 	}
 	
 	/**
@@ -153,6 +163,59 @@ public class GestureManager implements VirtualScreenListener {
 	protected void finalize() {
 		stop();
 		unregisterAllGestures();
+	}
+	
+	private void notifyListeners(Collection<HandData> hands, Gesture gesture, GestureState oldState) {
+		GestureState currentState = gesture.getCurrentState();
+		
+		if(currentState == GestureState.IN_PROGRESS) {
+			if(oldState == GestureState.IN_PROGRESS && gesture.isLive())
+				notifyGestureInProgress(hands, gesture);
+			else if(oldState == GestureState.POSSIBLE_DETECTION && gesture.isLive())
+				notifyGestureStarted(hands, gesture);
+			else if(gesture.isLive())
+				throw new IllegalStateException("Illegal state transition from: " + oldState + " to: " + currentState);
+		}
+		else if(currentState == GestureState.COMPLETED) {
+			if(oldState == GestureState.IN_PROGRESS)
+				notifyGestureCompleted(hands, gesture);
+			else if(oldState != GestureState.COMPLETED)
+				throw new IllegalStateException("Illegal state transition from: " + oldState + " to: " + currentState);
+		}
+		//else we don't care (no notification when entering other states)
+	}
+	
+	/**
+	 * Notifies listeners that the gesture is started (i.e. invokes {@link GestureListener#onGestureStarted(GestureData)})
+	 * @param hands The {@link HandData} of the current frame
+	 */
+	private void notifyGestureStarted(Collection<HandData> hands, Gesture gesture) {
+		GestureData gd = new GestureData(gesture.getName(), gesture.getCurrentState(), hands, gesture.isLive());
+		for(GestureListener l : listeners) {
+			l.onGestureStarted(gd);
+		}
+	}
+	
+	/**
+	 * Notifies listeners that the gesture is in progress (i.e. invokes {@link GestureListener#onGestureInProgress(GestureData)})
+	 * @param hands The {@link HandData} of the current frame
+	 */
+	private void notifyGestureInProgress(Collection<HandData> hands, Gesture gesture) {
+		GestureData gd = new GestureData(gesture.getName(), gesture.getCurrentState(), hands, gesture.isLive());
+		for(GestureListener l : listeners) {
+			l.onGestureInProgress(gd);
+		}
+	}
+	
+	/**
+	 * Notifies listeners that the gesture has completed (i.e. invokes {@link GestureListener#onGestureCompleted(GestureData)})
+	 * @param hands The {@link HandData} of the current frame
+	 */
+	private void notifyGestureCompleted(Collection<HandData> hands, Gesture gesture) {
+		GestureData gd = new GestureData(gesture.getName(), gesture.getCurrentState(), hands, gesture.isLive());
+		for(GestureListener l : listeners) {
+			l.onGestureCompleted(gd);
+		}
 	}
 
 }

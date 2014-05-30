@@ -11,21 +11,12 @@ import java.util.Collection;
  */
 public interface Gesture {
 	/**
-	 * Adds a new {@link GestureListener}
-	 * @param listener The listener to add
-	 */
-	public void addGestureListener(GestureListener listener);
-	/**
-	 * Removes the {@link GestureListener}
-	 * @param listener The listener to remove
-	 */
-	public void removeGestureListener(GestureListener listener);
-	/**
 	 * Updates the state of the gesture
 	 * @param hands The set of {@link HandData} of the new frame
+	 * @param gestureHands (out) The set of {@link HandData} this gesture is tracking
 	 * @return the {@link GestureState} this gesture is in after the call
 	 */
-	public GestureState updateState(Collection<HandData> hands);
+	public GestureState updateState(Collection<HandData> hands, Collection<HandData> gestureHands);
 	/**
 	 * 
 	 * @return The {@link GestureState} this gesture is currently in

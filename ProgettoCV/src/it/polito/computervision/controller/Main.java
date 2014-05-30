@@ -1,5 +1,9 @@
 package it.polito.computervision.controller;
 
+import it.polito.computervision.gestures.GestureData;
+import it.polito.computervision.gestures.GestureListener;
+import it.polito.computervision.gestures.GestureManager;
+import it.polito.computervision.gestures.impl.ClickGesture;
 import it.polito.computervision.virtualscreen.HandData;
 import it.polito.computervision.virtualscreen.VirtualScreenListener;
 import it.polito.computervision.virtualscreen.VirtualScreenManager;
@@ -149,7 +153,7 @@ public class Main extends Component implements VirtualScreenListener, VideoStrea
 				}
 				graphics.fillRect(framePosX + pos.getX().intValue() - 3, framePosY + pos.getY().intValue() - 3, 15, 15);
 				
-				System.out.println(hand);
+//				System.out.println(hand);
 			}
 		}
 	}
@@ -163,7 +167,7 @@ public class Main extends Component implements VirtualScreenListener, VideoStrea
 	}
 	
 	@Override
-	public void onFrameReady(VideoStream stream) {
+	public synchronized void onFrameReady(VideoStream stream) {
 		if(frame != null) {
 			frame.release();
 			frame = null;
@@ -189,8 +193,33 @@ public class Main extends Component implements VirtualScreenListener, VideoStrea
 		VideoStream stream = VideoStream.create(device, SensorType.COLOR);
 		device.setDepthColorSyncEnabled(true);
 
-		VirtualScreenManager.getInstance().start(2);
-		VirtualScreenManager.getInstance().initialize(new FlatVirtualScreen(), new StaticVirtualScreenInitializer(new Size(1,1), 700));
+		VirtualScreenManager.getInstance().start(1);
+		VirtualScreenManager.getInstance().initialize(new FlatVirtualScreen(), new StaticVirtualScreenInitializer(new Size(1,1), 900));
+		
+		GestureManager.getInstance().registerGesture(new ClickGesture());
+		GestureManager.getInstance().addGestureListener(new GestureListener() {
+
+			@Override
+			public void onGestureStarted(GestureData gesture) {
+				System.out.println("Gesture started");
+			}
+
+			@Override
+			public void onGestureInProgress(GestureData gesture) {
+				System.out.println("Gesture in progress");
+			}
+
+			@Override
+			public void onGestureCompleted(GestureData gesture) {
+				System.out.println("Gesture completed");
+				for(HandData gd : gesture.getHands()) {
+					System.out.println("Position: (" + gd.getPosition().getX() + "," + gd.getPosition().getY() + ")");
+				}
+			}
+			
+		});
+		
+		GestureManager.getInstance().start();
 		
 		final Main app = new Main(stream);
 		VirtualScreenManager.getInstance().addVirtualScreenListener(app);
