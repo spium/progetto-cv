@@ -14,6 +14,8 @@ import java.awt.event.KeyListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Collection;
 import java.util.List;
 
@@ -29,6 +31,7 @@ import org.openni.VideoFrameRef;
 import org.openni.VideoStream;
 
 import com.primesense.nite.NiTE;
+
 import org.openni.Point2D;
 
 public class Main extends Component implements VirtualScreenListener, VideoStream.NewFrameListener {
@@ -45,6 +48,8 @@ public class Main extends Component implements VirtualScreenListener, VideoStrea
 		hands = null;
 		frame = null;
 		this.stream = stream;
+		
+		
 		
 		stream.setMirroringEnabled(true);
 		
@@ -95,32 +100,40 @@ public class Main extends Component implements VirtualScreenListener, VideoStrea
 			frame = null;
 		}
 		stream.destroy();
-//		VirtualScreenManager.getInstance().destroy();
+		VirtualScreenManager.getInstance().destroy();
 		NiTE.shutdown();
 		OpenNI.shutdown();
 	}
 
-	public synchronized void paint(Graphics g) {
-//		if (frame == null) {
-//			return;
-//		}
+	public synchronized void paint(Graphics graphics) {
+		if (frame == null) {
+			return;
+		}
 
 		int framePosX = 0;
 		int framePosY = 0;
 
-		if (frame != null) {
+		if (frame != null && frame.getData() != null && frame.getData().hasRemaining()) {
 			int width = frame.getWidth();
 			int height = frame.getHeight();
 			BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-
-			frame.getData();
-			img.setRGB(0, 0, width, height, frame.getData().asIntBuffer().array(), 0, width);
-
+			ByteBuffer frameData = frame.getData().order(ByteOrder.LITTLE_ENDIAN);
+			int[] fdArray = new int[frameData.remaining()/3];
+			int pos = 0;
+			while(frameData.hasRemaining()) {
+				int r = frameData.get(),
+						g = frameData.get(),
+						b = frameData.get();
+				fdArray[pos] = 0xFF000000 | (r << 16) | (g << 8) | b;
+				++pos;
+			}
+			
+			img.setRGB(framePosX, framePosY, width, height, fdArray, 0, width);
+			
 			framePosX = (getWidth() - width) / 2;
 			framePosY = (getHeight() - height) / 2;
 
-			System.out.println("drawing");
-			g.drawImage(img, framePosX, framePosY, null);
+			graphics.drawImage(img, framePosX, framePosY, null);
 		}
 
 		// draw hands
@@ -129,12 +142,12 @@ public class Main extends Component implements VirtualScreenListener, VideoStrea
 
 				Point2D<Float> pos = hand.getPosition();
 				if(hand.isTouching()) {
-					g.setColor(Color.GREEN);
+					graphics.setColor(Color.GREEN);
 				}
 				else {
-					g.setColor(Color.RED);
+					graphics.setColor(Color.RED);
 				}
-				g.fillRect(framePosX + pos.getX().intValue() - 3, framePosY + pos.getY().intValue() - 3, 15, 15);
+				graphics.fillRect(framePosX + pos.getX().intValue() - 3, framePosY + pos.getY().intValue() - 3, 15, 15);
 				
 				System.out.println(hand);
 			}
@@ -158,7 +171,7 @@ public class Main extends Component implements VirtualScreenListener, VideoStrea
 
 		frame = stream.readFrame();
 		
-		repaint();
+//		repaint();
 	}
 
 	public static void main(String s[]) {
@@ -174,13 +187,13 @@ public class Main extends Component implements VirtualScreenListener, VideoStrea
 
 		Device device = Device.open(devicesInfo.get(0).getUri());
 		VideoStream stream = VideoStream.create(device, SensorType.COLOR);
-		
+		device.setDepthColorSyncEnabled(true);
 
-//		VirtualScreenManager.getInstance().start(2);
-//		VirtualScreenManager.getInstance().initialize(new FlatVirtualScreen(), new StaticVirtualScreenInitializer(new Size(1,1), 700));
+		VirtualScreenManager.getInstance().start(2);
+		VirtualScreenManager.getInstance().initialize(new FlatVirtualScreen(), new StaticVirtualScreenInitializer(new Size(1,1), 700));
 		
 		final Main app = new Main(stream);
-//		VirtualScreenManager.getInstance().addVirtualScreenListener(app);
+		VirtualScreenManager.getInstance().addVirtualScreenListener(app);
 		app.run();
 	}
 

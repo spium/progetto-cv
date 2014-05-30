@@ -30,7 +30,7 @@ public class VirtualScreenManager implements NewFrameListener {
 	private HandTrackerFrameRef lastFrame;
 	private Collection<VirtualScreenListener> listeners;
 	private boolean initialized, initDone, running;
-	private int handsToTrack, trackingHands;
+	private int handsToTrack;
 
 	/**
 	 * Creates an empty, uninitialized VirtualScreenManager
@@ -42,7 +42,6 @@ public class VirtualScreenManager implements NewFrameListener {
 		tracker = HandTracker.create();
 		listeners = new HashSet<VirtualScreenListener>();
 		handsToTrack = -1;
-		trackingHands = 0;
 	}
 
 	/**
@@ -68,12 +67,11 @@ public class VirtualScreenManager implements NewFrameListener {
 
 		lastFrame = tracker.readFrame();
 
-		//check for lost hands
-		for(com.primesense.nite.HandData hd : lastFrame.getHands()) {
-			if(hd.isLost()) {
-				--trackingHands;
-				tracker.startGestureDetection(GESTURE_TYPE);
-			}
+		if(lastFrame.getHands().size() != handsToTrack) {
+			tracker.startGestureDetection(GESTURE_TYPE);
+		}
+		else {
+			tracker.stopGestureDetection(GESTURE_TYPE);
 		}
 
 		//check for newly found hands
@@ -82,17 +80,11 @@ public class VirtualScreenManager implements NewFrameListener {
 				try {
 					//start the tracker
 					tracker.startHandTracking(gd.getCurrentPosition());
-					++trackingHands;
 				}
 				catch(Exception e) {
 					//do nothing... sometimes the native call will return ERROR, resulting in a runtime exception
 				}
 			}
-		}
-
-		//if we have all hands needed, stop gesture detection
-		if(trackingHands == handsToTrack) {
-			tracker.stopGestureDetection(GESTURE_TYPE);
 		}
 
 		if(isInitialized())
@@ -147,7 +139,7 @@ public class VirtualScreenManager implements NewFrameListener {
 	 * Starts notifying listeners of new frames
 	 * @param handsToTrack How many hands should we track
 	 */
-	public void start(int handsToTrack) {
+	public synchronized void start(int handsToTrack) {
 		if(handsToTrack <= 0)
 			throw new IllegalArgumentException("handsToTrack must be > 0");
 
@@ -162,12 +154,11 @@ public class VirtualScreenManager implements NewFrameListener {
 	/**
 	 * Stops notifying listeners of new frames
 	 */
-	public void stop() {
+	public synchronized void stop() {
 		if(running) {
 			tracker.removeNewFrameListener(this);
 			tracker.stopGestureDetection(GESTURE_TYPE);
 			handsToTrack = -1;
-			trackingHands = 0;
 			running = false;
 		}
 	}
@@ -193,7 +184,7 @@ public class VirtualScreenManager implements NewFrameListener {
 	 * It is safe to call again {@link VirtualScreenManager#initialize(VirtualScreen, VirtualScreenInitializer)} after this call.
 	 * This method is automatically called in the destructor. It is safe to invoke multiple times.
 	 */
-	public void destroy() {
+	public synchronized void destroy() {
 		stop();
 		vscreen = null;
 		if(lastFrame != null) {
@@ -201,6 +192,7 @@ public class VirtualScreenManager implements NewFrameListener {
 			lastFrame = null;
 		}
 		tracker.destroy();
+		tracker = null;
 		//deregister all listeners
 		listeners.clear();
 		initialized = initDone = false;
@@ -231,7 +223,7 @@ public class VirtualScreenManager implements NewFrameListener {
 	 * Notifies the {@link VirtualScreenListener}s that a new frame is available
 	 */
 	private void notifyListeners() {
-		if(lastFrame != null) {
+		if(lastFrame != null && vscreen != null) {
 			//get the original NiTE HandData collection
 			List<com.primesense.nite.HandData> handsOrig = lastFrame.getHands();
 			//convert to our own HandData
