@@ -5,6 +5,7 @@ import it.polito.computervision.gestures.GestureListener;
 import it.polito.computervision.gestures.GestureManager;
 import it.polito.computervision.gestures.impl.ClickGesture;
 import it.polito.computervision.gestures.impl.PanGesture;
+import it.polito.computervision.gestures.impl.ZoomGesture;
 import it.polito.computervision.virtualscreen.HandData;
 import it.polito.computervision.virtualscreen.VirtualScreenListener;
 import it.polito.computervision.virtualscreen.VirtualScreenManager;
@@ -195,10 +196,12 @@ public class Main extends Component implements VirtualScreenListener, VideoStrea
 		device.setDepthColorSyncEnabled(true);
 
 		VirtualScreenManager.getInstance().start(2);
-		VirtualScreenManager.getInstance().initialize(new FlatVirtualScreen(), new StaticVirtualScreenInitializer(new Size(1,1), 800));
+		VirtualScreenManager.getInstance().initialize(new FlatVirtualScreen(), new StaticVirtualScreenInitializer(new Size(1,1), 1500));
 		
-		GestureManager.getInstance().registerGesture(new ClickGesture());
-		GestureManager.getInstance().registerGesture(new PanGesture());
+//		GestureManager.getInstance().registerGesture(new ClickGesture());
+//		GestureManager.getInstance().registerGesture(new PanGesture());
+		GestureManager.getInstance().registerGesture(new ZoomGesture("zoom", ZoomGesture.Direction.BOTH, ZoomGesture.MIN_DETECTION_DISTANCE, ZoomGesture.THRESHOLD, true));
+		
 		GestureManager.getInstance().addGestureListener(new GestureListener() {
 
 			@Override

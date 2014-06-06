@@ -18,8 +18,8 @@ import it.polito.computervision.virtualscreen.HandData;
  */
 public class PanGesture extends AbstractGesture {
 
-	private static final float MIN_DETECTION_DISTANCE = 50.f;
-	private static final int DELAY_FRAMES = 30;
+	public static final float MIN_DETECTION_DISTANCE = 50.f;
+	public static final int DELAY_FRAMES = 30;
 
 	private short handId;
 	private Mat startPoint;
@@ -94,16 +94,11 @@ public class PanGesture extends AbstractGesture {
 				if((hd.getId() == handId)) {
 					if (hd.isTouching()) {
 						return GestureState.IN_PROGRESS;
-
 					}
-					else
-						return GestureState.COMPLETED;
 				}
 			}
 
-			handId = -1;
-			startPoint = null;
-			return GestureState.NOT_DETECTED;
+			return GestureState.COMPLETED;
 
 		case COMPLETED:
 			if(++framesDelayed == delayFrames) {
