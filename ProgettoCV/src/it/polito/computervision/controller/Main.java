@@ -13,6 +13,7 @@ import it.polito.computervision.virtualscreen.impl.StaticVirtualScreenInitialize
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Graphics;
+import java.awt.color.ColorSpace;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowAdapter;
@@ -104,6 +105,7 @@ public class Main extends Component implements VirtualScreenListener, VideoStrea
 			frame = null;
 		}
 		stream.destroy();
+		GestureManager.getInstance().stop();
 		VirtualScreenManager.getInstance().destroy();
 		NiTE.shutdown();
 		OpenNI.shutdown();
@@ -120,20 +122,17 @@ public class Main extends Component implements VirtualScreenListener, VideoStrea
 		if (frame != null && frame.getData() != null && frame.getData().hasRemaining()) {
 			int width = frame.getWidth();
 			int height = frame.getHeight();
-			BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+			BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 			ByteBuffer frameData = frame.getData().order(ByteOrder.LITTLE_ENDIAN);
 			int[] fdArray = new int[frameData.remaining()/3];
 			int pos = 0;
-			while(frameData.hasRemaining()) {
-				int r = frameData.get(),
-						g = frameData.get(),
-						b = frameData.get();
-				fdArray[pos] = 0xFF000000 | (r << 16) | (g << 8) | b;
-				++pos;
+			byte[] rgb = new byte[3];
+			while(frameData.remaining() >= 3) {
+				frameData.get(rgb);
+				fdArray[pos++] = 0xFF000000 | (rgb[0] << 16) | (rgb[1] << 8) | rgb[2];
 			}
 			
 			img.setRGB(framePosX, framePosY, width, height, fdArray, 0, width);
-			
 			framePosX = (getWidth() - width) / 2;
 			framePosY = (getHeight() - height) / 2;
 
