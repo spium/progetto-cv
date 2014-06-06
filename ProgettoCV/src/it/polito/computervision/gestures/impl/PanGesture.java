@@ -2,41 +2,52 @@ package it.polito.computervision.gestures.impl;
 
 import java.util.Collection;
 
-import org.openni.Point2D;
+import org.opencv.core.Core;
+import org.opencv.core.Mat;
+import org.opencv.core.MatOfFloat;
 
 import it.polito.computervision.gestures.Gesture;
 import it.polito.computervision.gestures.AbstractGesture;
 import it.polito.computervision.gestures.GestureState;
 import it.polito.computervision.virtualscreen.HandData;
-import it.polito.computervision.virtualscreen.VirtualScreen;
 
 /**
- * Detects a click with one hand. If multiple hands are being detected, the first one that is found touching the {@link VirtualScreen} will
- * be the one tracked for a click.
+ * 
  * @author giovanni
  *
  */
 public class PanGesture extends AbstractGesture {
 
+	private static final float MIN_DETECTION_DISTANCE = 50.f;
+	private static final int DELAY_FRAMES = 30;
+
 	private short handId;
-	private int targetValue;
-	private float XLast=-1;
-	private float YLast=-1;
-	private float movementAccumulator;
-	/**
-	 * Creates a ClickGesture named "click"
-	 */
+	private Mat startPoint;
+	private float minDistance;
+	private int delayFrames, framesDelayed;
+
 	public PanGesture() {
-		this("click");
+		this("pan");
 	}
-	
-	/**
-	 * Creates a ClickGesture with the given name
-	 * @param name The name of this {@link Gesture}.
-	 */
+
 	public PanGesture(String name) {
-		super(name, false);
+		this(name, MIN_DETECTION_DISTANCE, DELAY_FRAMES);
+	}
+	/**
+	 * Creates a PanGesture with the given name
+	 * @param name The name of this {@link Gesture}.
+	 * @param minDistance The minimum distance the hand has to travel before triggering detection
+	 * @param delayFrames The number of frames to delay detection after the gesture has completed
+	 */
+	public PanGesture(String name, float minDistance, int delayFrames) {
+		super(name, true);
+		if(minDistance <= 0)
+			throw new IllegalArgumentException("minDistance <= 0");
 		handId = -1;
+		this.minDistance = minDistance;
+		this.delayFrames = delayFrames;
+		framesDelayed = 0;
+		startPoint = null;
 	}
 
 	/**
@@ -52,15 +63,13 @@ public class PanGesture extends AbstractGesture {
 				}
 			}
 		}
-		
+
 		switch(getCurrentState()) {
 		case NOT_DETECTED:
-			movementAccumulator=0;
 			for(HandData hd : hands) {
 				if(hd.isTouching()) {
 					handId = hd.getId();
-					XLast=hd.getPosition().getX();
-					YLast=hd.getPosition().getY();
+					startPoint = new MatOfFloat(hd.getPosition().getX(), hd.getPosition().getY());
 					return GestureState.POSSIBLE_DETECTION;
 				}
 			}
@@ -70,37 +79,45 @@ public class PanGesture extends AbstractGesture {
 		case POSSIBLE_DETECTION:
 			for(HandData hd : hands) {
 				if((hd.getId() == handId)&&(hd.isTouching())) {
-					movementAccumulator+=Math.abs(hd.getPosition().getX()-XLast)+
-							Math.abs(hd.getPosition().getY()-YLast);
-					
-					if (movementAccumulator>=targetValue)
-						return GestureState.IN_PROGRESS;
+					Mat currPoint = new MatOfFloat(hd.getPosition().getX(), hd.getPosition().getY());
+					Core.subtract(currPoint, startPoint, currPoint);
+					return (Core.norm(currPoint) >= minDistance) ? GestureState.IN_PROGRESS : GestureState.POSSIBLE_DETECTION;
 				}
 			}
-			
+
 			handId = -1;
+			startPoint = null;
 			return GestureState.NOT_DETECTED;
 
 		case IN_PROGRESS:
 			for(HandData hd : hands) {
 				if((hd.getId() == handId)) {
-				if (hd.isTouching()){
-					System.out.println("X:" + hd.getPosition().getX().toString() + ", Y:" + hd.getPosition().getY().toString());
-					return GestureState.IN_PROGRESS;
-					
-				}
-				else
-					return GestureState.COMPLETED;
-					
+					if (hd.isTouching()) {
+						return GestureState.IN_PROGRESS;
+
+					}
+					else
+						return GestureState.COMPLETED;
 				}
 			}
-			
+
 			handId = -1;
+			startPoint = null;
 			return GestureState.NOT_DETECTED;
 
+		case COMPLETED:
+			if(++framesDelayed == delayFrames) {
+				handId = -1;
+				startPoint = null;
+				framesDelayed = 0;
+				return GestureState.NOT_DETECTED;
+			}
+			
+			return GestureState.COMPLETED;
 
 		default:	//COMPLETED or unknown state...
 			handId = -1;
+			startPoint = null;
 			return GestureState.NOT_DETECTED;
 		}
 	}

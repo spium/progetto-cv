@@ -4,6 +4,7 @@ import it.polito.computervision.gestures.GestureData;
 import it.polito.computervision.gestures.GestureListener;
 import it.polito.computervision.gestures.GestureManager;
 import it.polito.computervision.gestures.impl.ClickGesture;
+import it.polito.computervision.gestures.impl.PanGesture;
 import it.polito.computervision.virtualscreen.HandData;
 import it.polito.computervision.virtualscreen.VirtualScreenListener;
 import it.polito.computervision.virtualscreen.VirtualScreenManager;
@@ -13,7 +14,6 @@ import it.polito.computervision.virtualscreen.impl.StaticVirtualScreenInitialize
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Graphics;
-import java.awt.color.ColorSpace;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowAdapter;
@@ -27,6 +27,7 @@ import java.util.List;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
+import org.opencv.core.Core;
 import org.opencv.core.Size;
 import org.openni.Device;
 import org.openni.DeviceInfo;
@@ -179,6 +180,7 @@ public class Main extends Component implements VirtualScreenListener, VideoStrea
 
 	public static void main(String s[]) {
 		// initialize OpenNI and NiTE
+		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 		OpenNI.initialize();
 		NiTE.initialize();
 
@@ -196,21 +198,28 @@ public class Main extends Component implements VirtualScreenListener, VideoStrea
 		VirtualScreenManager.getInstance().initialize(new FlatVirtualScreen(), new StaticVirtualScreenInitializer(new Size(1,1), 800));
 		
 		GestureManager.getInstance().registerGesture(new ClickGesture());
+		GestureManager.getInstance().registerGesture(new PanGesture());
 		GestureManager.getInstance().addGestureListener(new GestureListener() {
 
 			@Override
 			public void onGestureStarted(GestureData gesture) {
-				System.out.println("Gesture started");
+				System.out.println("Gesture started: " + gesture.getName());
+				for(HandData gd : gesture.getHands()) {
+					System.out.println("Position: (" + gd.getPosition().getX() + "," + gd.getPosition().getY() + ")");
+				}
 			}
 
 			@Override
 			public void onGestureInProgress(GestureData gesture) {
-				System.out.println("Gesture in progress");
+				System.out.println("Gesture in progress: " + gesture.getName());
+				for(HandData gd : gesture.getHands()) {
+					System.out.println("Position: (" + gd.getPosition().getX() + "," + gd.getPosition().getY() + ")");
+				}
 			}
 
 			@Override
 			public void onGestureCompleted(GestureData gesture) {
-				System.out.println("Gesture completed");
+				System.out.println("Gesture completed: " + gesture.getName());
 				for(HandData gd : gesture.getHands()) {
 					System.out.println("Position: (" + gd.getPosition().getX() + "," + gd.getPosition().getY() + ")");
 				}
