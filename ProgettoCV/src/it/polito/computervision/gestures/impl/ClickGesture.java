@@ -1,10 +1,8 @@
 package it.polito.computervision.gestures.impl;
 
-import java.util.Collection;
-
 import it.polito.computervision.gestures.Gesture;
-import it.polito.computervision.gestures.AbstractGesture;
 import it.polito.computervision.gestures.GestureState;
+import it.polito.computervision.gestures.OneHandGesture;
 import it.polito.computervision.virtualscreen.HandData;
 import it.polito.computervision.virtualscreen.VirtualScreen;
 
@@ -14,16 +12,8 @@ import it.polito.computervision.virtualscreen.VirtualScreen;
  * @author giovanni
  *
  */
-public class ClickGesture extends AbstractGesture {
+public class ClickGesture extends OneHandGesture {
 
-	private short handId;
-
-	/**
-	 * Creates a ClickGesture named "click"
-	 */
-	public ClickGesture() {
-		this("click");
-	}
 	
 	/**
 	 * Creates a ClickGesture with the given name
@@ -31,49 +21,24 @@ public class ClickGesture extends AbstractGesture {
 	 */
 	public ClickGesture(String name) {
 		super(name, false);
-		handId = -1;
 	}
 
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public GestureState doUpdateState(Collection<HandData> hands, Collection<HandData> gestureHands) {
-		if(handId >= 0) {
-			for(HandData hd : hands) {
-				if(hd.getId() == handId) {
-					gestureHands.add(hd);
-					break;
-				}
-			}
-		}
-		
-		switch(getCurrentState()) {
+	public GestureState doUpdateState(HandData currentlyTrackedHand, boolean touchReleased) {
+		switch(currentState) {
 		case NOT_DETECTED:
-			for(HandData hd : hands) {
-				if(hd.isTouching()) {
-					handId = hd.getId();
-					return GestureState.POSSIBLE_DETECTION;
-				}
-			}
-
-			return GestureState.NOT_DETECTED;
+			return (currentlyTrackedHand != null) ? GestureState.POSSIBLE_DETECTION : GestureState.NOT_DETECTED;
 
 		case POSSIBLE_DETECTION:
-			for(HandData hd : hands) {
-				if(hd.getId() == handId) {
-					return hd.isTouching() ? GestureState.POSSIBLE_DETECTION : GestureState.IN_PROGRESS;
-				}
-			}
-
-			handId = -1;
-			return GestureState.NOT_DETECTED;
+			return (currentlyTrackedHand != null && currentlyTrackedHand.isTouching()) ? GestureState.POSSIBLE_DETECTION : touchReleased ? GestureState.IN_PROGRESS : GestureState.NOT_DETECTED;
 
 		case IN_PROGRESS:
 			return GestureState.COMPLETED;
 
 		default:	//COMPLETED or unknown state...
-			handId = -1;
 			return GestureState.NOT_DETECTED;
 		}
 	}

@@ -145,7 +145,7 @@ public class Main extends Component implements VirtualScreenListener, VideoStrea
 		if(hands != null) {
 			for (HandData hand : hands) {
 
-				Point2D<Float> pos = hand.getPosition();
+				Point2D<Float> pos = hand.getProjectedPosition();
 				if(hand.isTouching()) {
 					graphics.setColor(Color.GREEN);
 				}
@@ -196,11 +196,11 @@ public class Main extends Component implements VirtualScreenListener, VideoStrea
 		device.setDepthColorSyncEnabled(true);
 
 		VirtualScreenManager.getInstance().start(2);
-		VirtualScreenManager.getInstance().initialize(new FlatVirtualScreen(), new StaticVirtualScreenInitializer(new Size(1,1), 1500));
+		VirtualScreenManager.getInstance().initialize(new FlatVirtualScreen(), new StaticVirtualScreenInitializer(new Size(1,1), 1300));
 		
-//		GestureManager.getInstance().registerGesture(new ClickGesture());
-//		GestureManager.getInstance().registerGesture(new PanGesture());
-		GestureManager.getInstance().registerGesture(new ZoomGesture("zoom", ZoomGesture.Direction.BOTH, ZoomGesture.MIN_DETECTION_DISTANCE, ZoomGesture.THRESHOLD, true));
+		GestureManager.getInstance().registerGesture(new ClickGesture("click"));
+		GestureManager.getInstance().registerGesture(new PanGesture("pan"));
+		GestureManager.getInstance().registerGesture(new ZoomGesture("zoom"));
 		
 		GestureManager.getInstance().addGestureListener(new GestureListener() {
 

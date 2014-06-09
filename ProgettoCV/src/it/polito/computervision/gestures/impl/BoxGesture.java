@@ -16,7 +16,7 @@ import it.polito.computervision.virtualscreen.VirtualScreen;
  * @author giovanni
  *
  */
-public class BoxGesture extends AbstractGesture {
+public class BoxGesture extends TwoHandGesture {
 
 	private float targetValue;
 	private float differenceX=-1;

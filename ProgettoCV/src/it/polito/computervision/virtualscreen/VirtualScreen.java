@@ -43,8 +43,7 @@ public interface VirtualScreen {
 	 * Notice that Point3D is in package com.primesense.nite whereas Point2D is in package org.openni.
 	 * The reason is that com.primesense.nite.Point2D's constructor is not visible.
 	 * @param point The 3D point to convert
-	 * @param tracker the {@link HandTracker}
 	 * @return the 2D projection of the point on the virtual screen
 	 */
-	public Point2D<Float> get2DProjection(Point3D<Float> point, HandTracker tracker);
+	public Point2D<Float> get2DProjection(Point3D<Float> point);
 }

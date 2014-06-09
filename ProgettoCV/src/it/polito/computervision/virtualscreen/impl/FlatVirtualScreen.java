@@ -5,7 +5,9 @@ package it.polito.computervision.virtualscreen.impl;
 
 import com.primesense.nite.HandTracker;
 
+import org.opencv.core.Size;
 import org.openni.Point2D;
+
 import com.primesense.nite.Point3D;
 
 import it.polito.computervision.virtualscreen.VirtualScreen;
@@ -19,6 +21,14 @@ import it.polito.computervision.virtualscreen.AbstractVirtualScreen;
  */
 public class FlatVirtualScreen extends AbstractVirtualScreen {
 
+	public FlatVirtualScreen() {
+		super();
+	}
+	
+	public FlatVirtualScreen(Size size, float depth) {
+		super(size, depth);
+	}
+	
 	/**
 	 * {@inheritDoc}
 	 */
@@ -31,10 +41,8 @@ public class FlatVirtualScreen extends AbstractVirtualScreen {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public Point2D<Float> get2DProjection(Point3D<Float> point, HandTracker tracker) {
-		com.primesense.nite.Point2D<Float> pos = tracker.convertHandCoordinatesToDepth(point);
-		//mirror the X coordinate
-		return new Point2D<Float>(tracker.readFrame().getDepthFrame().getWidth() - pos.getX(), pos.getY());
+	public Point2D<Float> get2DProjection(Point3D<Float> point) {
+		return new Point2D<Float>(point.getX(), point.getY());
 	}
 
 }

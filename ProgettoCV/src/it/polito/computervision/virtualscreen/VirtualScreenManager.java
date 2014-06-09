@@ -231,7 +231,10 @@ public class VirtualScreenManager implements NewFrameListener {
 			for(com.primesense.nite.HandData hd : handsOrig) {
 				if(hd.isTracking()) {
 					Point3D<Float> pos = hd.getPosition();
-					hands.add(new HandData(hd.getId(), vscreen.get2DProjection(pos, tracker), vscreen.isTouching(pos)));
+					com.primesense.nite.Point2D<Float> depthPos = tracker.convertHandCoordinatesToDepth(pos);
+					//mirror on the X axis
+					org.openni.Point2D<Float> projPos = new org.openni.Point2D<Float>(lastFrame.getDepthFrame().getWidth() - depthPos.getX(), depthPos.getY());
+					hands.add(new HandData(hd.getId(), vscreen.get2DProjection(pos), projPos, vscreen.isTouching(pos)));
 				}
 			}
 

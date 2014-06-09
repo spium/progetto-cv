@@ -2,7 +2,9 @@ package it.polito.computervision.gestures;
 
 import it.polito.computervision.virtualscreen.HandData;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Implements the common functionality of a gesture (getters and {@link GestureState} update).
@@ -13,7 +15,7 @@ import java.util.Collection;
 public abstract class AbstractGesture implements Gesture {
 
 	private String name;
-	private GestureState currentState;
+	protected GestureState currentState;
 	private boolean live;
 	
 	/**
@@ -24,22 +26,6 @@ public abstract class AbstractGesture implements Gesture {
 	public AbstractGesture(String name, boolean live) {
 		this.name = name;
 		this.live = live;
-		currentState = GestureState.NOT_DETECTED;
-	}
-	
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public GestureState updateState(Collection<HandData> hands, Collection<HandData> gestureHands) {
-		return (currentState = doUpdateState(hands, gestureHands));
-	}
-
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public void reset() {
 		currentState = GestureState.NOT_DETECTED;
 	}
 
@@ -68,10 +54,26 @@ public abstract class AbstractGesture implements Gesture {
 	}
 	
 	/**
-	 * Concrete gestures must implement this method. The semantics are the same of {@link Gesture#updateState(Collection, Collection)}.
-	 * @param hands The {@link HandData} being tracked during this frame
-	 * @param gestureHands The {@link HandData} this gesture is tracking
-	 * @return The {@link GestureState} this gesture is in after the update.
+	 * Implementations should place their reset logic here
 	 */
-	protected abstract GestureState doUpdateState(Collection<HandData> hands, Collection<HandData> gestureHands);
+	protected abstract void doReset();
+	
+	/**
+	 * 
+	 * {@inheritDoc}
+	 */
+	@Override
+	public final void reset() {
+		doReset();
+		currentState = GestureState.NOT_DETECTED;
+	}
+	
+	protected List<HandData> getTouchingHands(Collection<HandData> hands) {
+		ArrayList<HandData> touchingHands = new ArrayList<HandData>();
+		for(HandData hd : hands)
+			if(hd.isTouching())
+				touchingHands.add(hd);
+		
+		return touchingHands;
+	}
 }

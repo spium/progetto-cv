@@ -51,11 +51,11 @@ public class GestureManager implements VirtualScreenListener {
 			GestureState oldState = gestureInProgress.getCurrentState();
 			GestureState newState = gestureInProgress.updateState(hands, gestureHands);
 			if(oldState != newState)
-				System.out.println(oldState.toString() + " => " + newState.toString());
+				System.out.println(gestureInProgress.getName() + ": " + oldState.toString() + " => " + newState.toString());
 			notifyListeners(Collections.unmodifiableCollection(gestureHands), gestureInProgress, oldState);
 			
-			if(newState != GestureState.IN_PROGRESS) {
-				//remove it if it's no longer in progress
+			if(newState != GestureState.IN_PROGRESS && newState != GestureState.COMPLETED) {
+				//remove it if it's no longer in progress or complete
 				gestureInProgress = null;
 			}
 		}
@@ -66,7 +66,7 @@ public class GestureManager implements VirtualScreenListener {
 				GestureState oldState = g.getCurrentState();
 				GestureState newState = g.updateState(hands, gestureHands);
 				if(oldState != newState)
-					System.out.println(oldState.toString() + " -> " + newState.toString());
+					System.out.println(g.getName() + ": " + oldState.toString() + " -> " + newState.toString());
 				notifyListeners(Collections.unmodifiableCollection(gestureHands), g, oldState);
 				
 				if(newState == GestureState.IN_PROGRESS) {

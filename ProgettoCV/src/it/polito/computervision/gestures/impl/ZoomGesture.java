@@ -1,210 +1,138 @@
 package it.polito.computervision.gestures.impl;
 
-import java.util.ArrayList;
-import java.util.Collection;
-
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfFloat;
 
 import it.polito.computervision.gestures.Gesture;
-import it.polito.computervision.gestures.AbstractGesture;
 import it.polito.computervision.gestures.GestureState;
+import it.polito.computervision.gestures.TwoHandGesture;
 import it.polito.computervision.virtualscreen.HandData;
 
-public class ZoomGesture extends AbstractGesture {
+public class ZoomGesture extends TwoHandGesture {
 
 	public enum Direction { INWARD, OUTWARD, BOTH }
 
-	public static final float MIN_DETECTION_DISTANCE = 35.f;
-	public static final float THRESHOLD = 200.f;
+	public static final float DETECTION_THRESHOLD = 35.f;
+	public static final float COMPLETION_THRESHOLD = 300.f;
 
-	private float minDistance, initialDistance, threshold;
+	private float detectionThreshold, initialDistance, completionThreshold;
 	private Direction direction;
-	private ArrayList<Short> handIds;
-
-
-	public ZoomGesture() {
-		this("zoom");
-	}
 
 	/**
 	 * Creates a ZoomGesture with the given name
 	 * @param name The name of this {@link Gesture}.
 	 */
 	public ZoomGesture(String name) {
-		this(name, Direction.BOTH, MIN_DETECTION_DISTANCE, THRESHOLD, true);
+		this(name, Direction.BOTH, DETECTION_THRESHOLD, COMPLETION_THRESHOLD, true);
 	}
 
-	public ZoomGesture(String name, Direction direction, float minDistance, float threshold, boolean live) {
+	public ZoomGesture(String name, Direction direction, float detectionThreshold, float completionThreshold, boolean live) {
 		super(name, live);
-		if(minDistance <= 0)
-			throw new IllegalArgumentException("minDistance <= 0");
-		if(threshold <= 0 || threshold < minDistance)
-			throw new IllegalArgumentException("threshold <= 0 or threshold < minDistance");
+		if(detectionThreshold <= 0)
+			throw new IllegalArgumentException("detectionThreshold <= 0");
+		if(completionThreshold <= 0 || completionThreshold < detectionThreshold)
+			throw new IllegalArgumentException("completionThreshold <= 0 or completionThreshold < detectionThreshold");
 
 		this.direction = direction;
-		this.minDistance = minDistance;
+		this.detectionThreshold = detectionThreshold;
 		initialDistance = -1;
-		this.threshold = threshold;
-		handIds = new ArrayList<Short>(2);
+		this.completionThreshold = completionThreshold;
 	}
 
-	private boolean allHands(Collection<HandData> hands) {
-		int count = 0;
-		for(HandData hd : hands) {
-			if(handIds.contains(hd.getId())) {
-				++count;
-				if(count == handIds.size())
-					return true;
-			}
-		}
-
-		return false;
+	@Override
+	protected void doReset() {
+		super.doReset();
+		initialDistance = -1;
 	}
-
+	
 	/**
 	 * {@inheritDoc}
 	 */
 	@Override
-	public GestureState doUpdateState(Collection<HandData> hands, Collection<HandData> gestureHands) {
-
-
-		if(handIds.size() == 2 && allHands(hands))
-			for(HandData hd : hands)
-				if(handIds.contains(hd.getId()))
-					gestureHands.add(hd);
-
-		Mat hand1 = null, hand2 = null;
-
-		switch(getCurrentState()) {
+	public GestureState doUpdateState(HandData[] hands, boolean touchReleased) {
+		Mat[] handPoints = new Mat[2];
+		switch(currentState) {
 		case NOT_DETECTED:
-			if(hands.size() < 2)
-				return GestureState.NOT_DETECTED;
-
-			for(HandData hd : hands) {
-				if(hd.isTouching()) {
-					handIds.add(hd.getId());
-					if(hand1 == null) hand1 = new MatOfFloat(hd.getPosition().getX(), hd.getPosition().getY());
-					else {
-						hand2 = new MatOfFloat(hd.getPosition().getX(), hd.getPosition().getY());
-						Core.subtract(hand1, hand2, hand1);
-						initialDistance = (float) Core.norm(hand1);
-						return GestureState.POSSIBLE_DETECTION;
-					}
-				}
+			if(hands != null) {
+				for(int i = 0; i < 2; ++i)
+					handPoints[i] = new MatOfFloat(hands[i].getPosition().getX(), hands[i].getPosition().getY());
+				
+				Core.subtract(handPoints[0], handPoints[1], handPoints[0]);
+				initialDistance = (float) Core.norm(handPoints[0]);
+				return GestureState.POSSIBLE_DETECTION;
 			}
-
-			handIds.clear();
-			return GestureState.NOT_DETECTED;
-
+			else
+				return GestureState.NOT_DETECTED;
 
 		case POSSIBLE_DETECTION:
-			if(!allHands(hands)) {
-				handIds.clear();
-				initialDistance = -1;
-				return GestureState.NOT_DETECTED;
-			}
-
-			for(HandData hd : hands) {
-				if(handIds.contains(hd.getId()) && hd.isTouching()) {
-					if(hand1 == null) hand1 = new MatOfFloat(hd.getPosition().getX(), hd.getPosition().getY());
-					else {
-						hand2 = new MatOfFloat(hd.getPosition().getX(), hd.getPosition().getY());
-						Core.subtract(hand1, hand2, hand1);
-						float currDistance = (float) Core.norm(hand1);
-						float diff = currDistance - initialDistance;
-
-						if(Math.abs(diff) >= minDistance) {
-							if(direction == Direction.BOTH || (direction == Direction.OUTWARD && diff > 0) || (direction == Direction.INWARD && diff < 0)) {
-								return GestureState.IN_PROGRESS;
-							}
-							else {
-								handIds.clear();
-								initialDistance = -1;
-								return GestureState.NOT_DETECTED;
-							}
-						}
-						else {
-							return GestureState.POSSIBLE_DETECTION;
-						}
-					}	
+			if(hands != null) {
+				for(int i = 0; i < 2; ++i) {
+					if(!hands[i].isTouching()) return GestureState.NOT_DETECTED;
+					handPoints[i] = new MatOfFloat(hands[i].getPosition().getX(), hands[i].getPosition().getY());
 				}
-			}
-
-			handIds.clear();
-			initialDistance = -1;
-			return GestureState.NOT_DETECTED;
-
-		case IN_PROGRESS:
-			if(!allHands(hands)) {
-				if(isLive()) return GestureState.COMPLETED;
-				else {
-					handIds.clear();
-					initialDistance = -1;
-					return GestureState.NOT_DETECTED;
-				}
-			}
-
-			for(HandData hd : hands) {
-				if(handIds.contains(hd.getId())) {
-					if(isLive() && !hd.isTouching())
-						return GestureState.COMPLETED;
-
-					if(!isLive() && hd.isTouching()) {
-						if(hand1 == null) hand1 = new MatOfFloat(hd.getPosition().getX(), hd.getPosition().getY());
-						else {
-							hand2 = new MatOfFloat(hd.getPosition().getX(), hd.getPosition().getY());
-							Core.subtract(hand1, hand2, hand1);
-							float currDistance = (float) Core.norm(hand1);
-							float diff = currDistance - initialDistance;
-
-							if(Math.abs(diff) >= threshold) {
-								if(direction == Direction.BOTH || (direction == Direction.OUTWARD && diff > 0) || (direction == Direction.INWARD && diff < 0)) {
-									return GestureState.COMPLETED;
-								}
-								else {
-									handIds.clear();
-									initialDistance = -1;
-									return GestureState.NOT_DETECTED;
-								}
-							}
-							else {
-								return GestureState.IN_PROGRESS;
-							}
-						}
+				
+				Core.subtract(handPoints[0], handPoints[1], handPoints[0]);
+				float currDistance = (float) Core.norm(handPoints[0]);
+				float diff = currDistance - initialDistance;
+				
+				if(Math.abs(diff) >= detectionThreshold) {
+					if(direction == Direction.BOTH || (direction == Direction.OUTWARD && diff > 0) || (direction == Direction.INWARD && diff < 0)) {
+						return GestureState.IN_PROGRESS;
 					}
-				}
-			}
-
-			if(isLive()) return GestureState.IN_PROGRESS;
-
-			handIds.clear();
-			initialDistance = -1;
-			return GestureState.NOT_DETECTED;
-
-		case COMPLETED:
-			if(isLive() || !allHands(hands)) {
-				handIds.clear();
-				initialDistance = -1;
-				return GestureState.NOT_DETECTED;
-			}
-			else {
-				for(HandData hd : hands)
-					if(handIds.contains(hd.getId()) && !hd.isTouching()) {
-						handIds.clear();
-						initialDistance = -1;
+					else {
 						return GestureState.NOT_DETECTED;
 					}
-				
-				return GestureState.COMPLETED;
+				}
+				else {
+					return GestureState.POSSIBLE_DETECTION;
+				}
 			}
+			else
+				return GestureState.NOT_DETECTED;
+
+		case IN_PROGRESS:
+			if(hands != null) {
+				for(int i = 0; i < 2; ++i)
+					if(!hands[i].isTouching())
+						return isLive() ? GestureState.COMPLETED : GestureState.NOT_DETECTED;
+				
+				if(isLive()) return GestureState.IN_PROGRESS;
+				
+				//if not live, check if we reached the threshold
+				for(int i = 0; i < 2; ++i)
+					handPoints[i] = new MatOfFloat(hands[i].getPosition().getX(), hands[i].getPosition().getY());
+				
+				Core.subtract(handPoints[0], handPoints[1], handPoints[0]);
+				float currDistance = (float) Core.norm(handPoints[0]);
+				float diff = currDistance - initialDistance;
+				
+				if(Math.abs(diff) >= completionThreshold) {
+					if(direction == Direction.BOTH || (direction == Direction.OUTWARD && diff > 0) || (direction == Direction.INWARD && diff < 0)) {
+						return GestureState.COMPLETED;
+					}
+					else {
+						return GestureState.NOT_DETECTED;
+					}
+				}
+				else {
+					return GestureState.IN_PROGRESS;
+				}
+			}
+			else if(isLive())
+				return GestureState.COMPLETED;	//even if touchReleased == false consider it complete
+			else
+				return GestureState.NOT_DETECTED;
+
+		case COMPLETED:
+			if(hands == null || (!hands[0].isTouching() && !hands[1].isTouching()))
+				return GestureState.NOT_DETECTED;
+			else
+				return GestureState.COMPLETED;
 			
 			
 		default:	//unknown state...
 
-			handIds.clear();
-			initialDistance = -1;
 			return GestureState.NOT_DETECTED;
 		}
 	}
