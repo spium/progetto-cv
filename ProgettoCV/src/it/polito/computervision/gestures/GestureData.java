@@ -4,6 +4,7 @@ import it.polito.computervision.virtualscreen.HandData;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Represents data about a 2D gesture
@@ -60,6 +61,10 @@ public class GestureData {
 	
 	public boolean hasData(String key) {
 		return data.containsKey(key);
+	}
+	
+	public Set<String> getDataKeys() {
+		return data.keySet();
 	}
 
 	/**
