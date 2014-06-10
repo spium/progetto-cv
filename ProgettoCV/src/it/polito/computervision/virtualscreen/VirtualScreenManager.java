@@ -6,6 +6,8 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 
+import org.opencv.core.Size;
+
 import com.primesense.nite.HandTracker;
 import com.primesense.nite.HandTracker.NewFrameListener;
 import com.primesense.nite.GestureData;
@@ -135,6 +137,10 @@ public class VirtualScreenManager implements NewFrameListener {
 		return initialized;
 	}
 
+	public synchronized Size getFrameSize() {
+		return lastFrame != null ? new Size(lastFrame.getDepthFrame().getWidth(), lastFrame.getDepthFrame().getHeight()) : new Size(0,0);
+	}
+	
 	/**
 	 * Starts notifying listeners of new frames
 	 * @param handsToTrack How many hands should we track

@@ -14,6 +14,7 @@ import it.polito.computervision.virtualscreen.impl.StaticVirtualScreenInitialize
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -29,6 +30,9 @@ import java.util.List;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
+import net.rootdev.jenajung.JenaJungGraph;
+import net.rootdev.jenajung.Transformers;
+
 import org.opencv.core.Core;
 import org.opencv.core.Size;
 import org.openni.Device;
@@ -38,31 +42,42 @@ import org.openni.SensorType;
 import org.openni.VideoFrameRef;
 import org.openni.VideoStream;
 
+import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.rdf.model.RDFNode;
+import com.hp.hpl.jena.rdf.model.Statement;
+import com.hp.hpl.jena.util.FileManager;
 import com.primesense.nite.NiTE;
+
+import edu.uci.ics.jung.algorithms.layout.FRLayout;
+import edu.uci.ics.jung.algorithms.layout.Layout;
+import edu.uci.ics.jung.visualization.BasicVisualizationServer;
+import edu.uci.ics.jung.visualization.RenderContext;
+import edu.uci.ics.jung.visualization.VisualizationServer;
 
 import org.openni.Point2D;
 
-public class Main extends Component implements VirtualScreenListener, VideoStream.NewFrameListener {
+public class Main implements VirtualScreenListener, VisualizationServer.Paintable {
 
-	private static final long serialVersionUID = -7120492427686133224L;
+	public static final int BORDER = 20;
 	
 	private JFrame mFrame;
 	private boolean mShouldRun = true;
-	private VideoStream stream;
-	private VideoFrameRef frame;
-	Collection<HandData> hands;
+//		private VideoStream stream;
+//		private VideoFrameRef frame;
+	private Collection<HandData> hands;
+	private BasicVisualizationServer<RDFNode, Statement> viz;
 
-	public Main(VideoStream stream) {
+	public Main(BasicVisualizationServer<RDFNode, Statement> viz) {
 		hands = null;
-		frame = null;
-		this.stream = stream;
-		
-		
-		
-//		stream.setMirroringEnabled(true);
-//		
-//		stream.addNewFrameListener(this);
-//		stream.start();
+//		this.stream = stream;
+		this.viz = viz;
+
+		this.viz.addPostRenderPaintable(this);
+
+//				stream.setMirroringEnabled(true);
+//				
+//				stream.addNewFrameListener(this);
+//				stream.start();
 		mFrame = new JFrame("NiTE Hand Tracker Viewer");
 
 		// register to key events
@@ -88,9 +103,9 @@ public class Main extends Component implements VirtualScreenListener, VideoStrea
 			}
 		});
 
-		this.setSize(800, 600);
-		mFrame.add("Center", this);
-		mFrame.setSize(this.getWidth(), this.getHeight());
+		mFrame.getContentPane().add(viz);
+		mFrame.pack();
+		mFrame.setSize(viz.getSize());
 		mFrame.setVisible(true);
 	}
 
@@ -103,11 +118,11 @@ public class Main extends Component implements VirtualScreenListener, VideoStrea
 			}
 		}
 		mFrame.dispose();
-		if(frame != null) {
-			frame.release();
-			frame = null;
-		}
-		stream.destroy();
+		//		if(frame != null) {
+		//			frame.release();
+		//			frame = null;
+		//		}
+		//		stream.destroy();
 		GestureManager.getInstance().stop();
 		VirtualScreenManager.getInstance().destroy();
 		NiTE.shutdown();
@@ -119,29 +134,30 @@ public class Main extends Component implements VirtualScreenListener, VideoStrea
 		int framePosX = 0;
 		int framePosY = 0;
 
-//		if (frame == null) {
-//			return;
-//		}
-//
-//		if (frame != null && frame.getData() != null && frame.getData().hasRemaining()) {
-//			int width = frame.getWidth();
-//			int height = frame.getHeight();
-//			BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-//			ByteBuffer frameData = frame.getData().order(ByteOrder.LITTLE_ENDIAN);
-//			int[] fdArray = new int[frameData.remaining()/3];
-//			int pos = 0;
-//			byte[] rgb = new byte[3];
-//			while(frameData.remaining() >= 3) {
-//				frameData.get(rgb);
-//				fdArray[pos++] = 0xFF000000 | (rgb[0] << 16) | (rgb[1] << 8) | rgb[2];
-//			}
-//			
-//			img.setRGB(framePosX, framePosY, width, height, fdArray, 0, width);
-//			framePosX = (getWidth() - width) / 2;
-//			framePosY = (getHeight() - height) / 2;
-//
-//			graphics.drawImage(img, framePosX, framePosY, null);
-//		}
+//				if (frame == null) {
+//					return;
+//				}
+//		
+//				if (frame != null && frame.getData() != null && frame.getData().hasRemaining()) {
+//					int width = frame.getWidth();
+//					int height = frame.getHeight();
+//					BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+//					ByteBuffer frameData = frame.getData().order(ByteOrder.LITTLE_ENDIAN);
+//					int[] fdArray = new int[frameData.remaining()/3];
+//					int pos = 0;
+//					byte[] rgb = new byte[3];
+//					while(frameData.remaining() >= 3) {
+//						frameData.get(rgb);
+//						fdArray[pos++] = 0xFF000000 | (rgb[0] << 16) | (rgb[1] << 8) | rgb[2];
+//					}
+//					
+//					img.setRGB(framePosX, framePosY, width, height, fdArray, 0, width);
+					Size frameSize = VirtualScreenManager.getInstance().getFrameSize();
+					framePosX = (mFrame.getWidth() - (int) frameSize.width) / 2;
+					framePosY = (mFrame.getHeight() - (int) frameSize.height) / 2;
+		
+//					graphics.drawImage(img, framePosX, framePosY, null);
+//				}
 
 		// draw hands
 		if(hands != null) {
@@ -154,32 +170,36 @@ public class Main extends Component implements VirtualScreenListener, VideoStrea
 				else {
 					graphics.setColor(Color.RED);
 				}
-				graphics.fillRect(framePosX + pos.getX().intValue(), framePosY + pos.getY().intValue(), 15, 15);
-				
-//				System.out.println(hand);
+				graphics.fillRect(framePosX + pos.getX().intValue() + 7, framePosY + pos.getY().intValue() + 7, 15, 15);
+
+				//				System.out.println(hand);
 			}
 		}
+	}
+	
+	@Override
+	public boolean useTransform() {
+		return true;
 	}
 
 	@Override
 	public synchronized void onNewFrame(Collection<HandData> hands) {
 
 		this.hands = hands;
-
-		repaint();
+		mFrame.repaint();
 	}
-	
-	@Override
-	public synchronized void onFrameReady(VideoStream stream) {
-		
-		if(frame != null) {
-			frame.release();
-			frame = null;
-		}
 
-		frame = stream.readFrame();
-//		repaint();
-	}
+//		@Override
+//		public synchronized void onFrameReady(VideoStream stream) {
+//			
+//			if(frame != null) {
+//				frame.release();
+//				frame = null;
+//			}
+//	
+//			frame = stream.readFrame();
+//			repaint();
+//		}
 
 	public static void main(String s[]) {
 		// initialize OpenNI and NiTE
@@ -194,17 +214,17 @@ public class Main extends Component implements VirtualScreenListener, VideoStrea
 		}
 
 		Device device = Device.open(devicesInfo.get(0).getUri());
-		VideoStream stream = VideoStream.create(device, SensorType.COLOR);
-		device.setDepthColorSyncEnabled(true);
+//				VideoStream stream = VideoStream.create(device, SensorType.COLOR);
+//				device.setDepthColorSyncEnabled(true);
 
 		VirtualScreenManager.getInstance().start(2);
 		VirtualScreenManager.getInstance().initialize(new FlatVirtualScreen(), new StaticVirtualScreenInitializer(new Size(1,1), 1300));
-		
+
 		GestureManager.getInstance().registerGesture(new ClickGesture("click"));
 		GestureManager.getInstance().registerGesture(new PanGesture("swipe-left", EnumSet.<PanGesture.Direction>of(PanGesture.Direction.LEFT), false));
 		GestureManager.getInstance().registerGesture(new PanGesture("swipe-right", EnumSet.<PanGesture.Direction>of(PanGesture.Direction.RIGHT), false));
 		GestureManager.getInstance().registerGesture(new ZoomGesture("zoom"));
-		
+
 		GestureManager.getInstance().addGestureListener(new GestureListener() {
 
 			@Override
@@ -238,17 +258,43 @@ public class Main extends Component implements VirtualScreenListener, VideoStrea
 					System.out.println("Position: (" + gd.getPosition().getX() + "," + gd.getPosition().getY() + ")");
 				}
 			}
-			
+
 		});
-		
+
 		GestureManager.getInstance().start();
+
+		String resource = "http://www.w3.org/TR/owl-guide/wine.rdf";
+
+		System.out.print("Loading model...");
+		Model model = FileManager.get().loadModel(resource);
+		System.out.println("done");
+				
+		JenaJungGraph g = new JenaJungGraph(model);
+
+		Layout<RDFNode, Statement> layout = new FRLayout<RDFNode, Statement>(g);
+
+		int width, height;
+		do {
+			Size frameSize = VirtualScreenManager.getInstance().getFrameSize();
+			width = (int) frameSize.width;
+			height = (int) frameSize.height;
+		}
+		while(width == 0 || height == 0);
 		
-		final Main app = new Main(stream);
+		width -= 2*Main.BORDER;
+		height -= 2*Main.BORDER;
+		
+		layout.setSize(new Dimension(width, height));
+		BasicVisualizationServer<RDFNode, Statement> viz = new BasicVisualizationServer<RDFNode, Statement>(layout, new Dimension(width, height));
+		RenderContext<RDFNode, Statement> context = viz.getRenderContext();
+		context.setEdgeLabelTransformer(Transformers.EDGE);
+		context.setVertexLabelTransformer(Transformers.NODE);
+
+		viz.setSize(new Dimension(width, height));
+
+		final Main app = new Main(viz);
 		VirtualScreenManager.getInstance().addVirtualScreenListener(app);
+		System.out.println("About to run");
 		app.run();
 	}
-
-	
-
-
 }
