@@ -3,6 +3,7 @@ package it.polito.computervision.gestures;
 import it.polito.computervision.virtualscreen.HandData;
 
 import java.util.Collection;
+import java.util.Map;
 
 /**
  * Represents a 2D gesture.
@@ -32,6 +33,12 @@ public interface Gesture {
 	 * @return true if it's a live gesture, false otherwise
 	 */
 	public boolean isLive();
+	
+	/**
+	 * 
+	 * @return arbitrary data associated to the specific gesture
+	 */
+	public Map<String, Object> getData();
 	
 	/**
 	 * Resets this gesture's {@link GestureState} to NOT_DETECTED

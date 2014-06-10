@@ -3,6 +3,7 @@ package it.polito.computervision.gestures;
 import it.polito.computervision.virtualscreen.HandData;
 
 import java.util.Collection;
+import java.util.Map;
 
 /**
  * Represents data about a 2D gesture
@@ -15,6 +16,7 @@ public class GestureData {
 	private GestureState state;
 	private Collection<HandData> hands;
 	private boolean live;
+	private Map<String, Object> data;
 	
 	/**
 	 * @param name The unique name of this gesture
@@ -22,10 +24,11 @@ public class GestureData {
 	 * @param hands The hands this gesture is tracking
 	 * @param live Whether the gesture is live or not
 	 */
-	public GestureData(String name, GestureState state, Collection<HandData> hands, boolean live) {
+	public GestureData(String name, GestureState state, Collection<HandData> hands, Map<String, Object> data, boolean live) {
 		this.name = name;
 		this.state = state;
 		this.hands = hands;
+		this.data = data;
 		this.live = live;
 	}
 
@@ -48,6 +51,15 @@ public class GestureData {
 	 */
 	public Collection<HandData> getHands() {
 		return hands;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public <T> T getData(String key) {
+		return (T) data.get(key);
+	}
+	
+	public boolean hasData(String key) {
+		return data.containsKey(key);
 	}
 
 	/**

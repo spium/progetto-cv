@@ -23,6 +23,7 @@ import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
 
 import javax.swing.JFrame;
@@ -44,7 +45,7 @@ import org.openni.Point2D;
 public class Main extends Component implements VirtualScreenListener, VideoStream.NewFrameListener {
 
 	private static final long serialVersionUID = -7120492427686133224L;
-
+	
 	private JFrame mFrame;
 	private boolean mShouldRun = true;
 	private VideoStream stream;
@@ -58,10 +59,10 @@ public class Main extends Component implements VirtualScreenListener, VideoStrea
 		
 		
 		
-		stream.setMirroringEnabled(true);
-		
-		stream.addNewFrameListener(this);
-		stream.start();
+//		stream.setMirroringEnabled(true);
+//		
+//		stream.addNewFrameListener(this);
+//		stream.start();
 		mFrame = new JFrame("NiTE Hand Tracker Viewer");
 
 		// register to key events
@@ -114,32 +115,33 @@ public class Main extends Component implements VirtualScreenListener, VideoStrea
 	}
 
 	public synchronized void paint(Graphics graphics) {
-		if (frame == null) {
-			return;
-		}
 
 		int framePosX = 0;
 		int framePosY = 0;
 
-		if (frame != null && frame.getData() != null && frame.getData().hasRemaining()) {
-			int width = frame.getWidth();
-			int height = frame.getHeight();
-			BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-			ByteBuffer frameData = frame.getData().order(ByteOrder.LITTLE_ENDIAN);
-			int[] fdArray = new int[frameData.remaining()/3];
-			int pos = 0;
-			byte[] rgb = new byte[3];
-			while(frameData.remaining() >= 3) {
-				frameData.get(rgb);
-				fdArray[pos++] = 0xFF000000 | (rgb[0] << 16) | (rgb[1] << 8) | rgb[2];
-			}
-			
-			img.setRGB(framePosX, framePosY, width, height, fdArray, 0, width);
-			framePosX = (getWidth() - width) / 2;
-			framePosY = (getHeight() - height) / 2;
-
-			graphics.drawImage(img, framePosX, framePosY, null);
-		}
+//		if (frame == null) {
+//			return;
+//		}
+//
+//		if (frame != null && frame.getData() != null && frame.getData().hasRemaining()) {
+//			int width = frame.getWidth();
+//			int height = frame.getHeight();
+//			BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+//			ByteBuffer frameData = frame.getData().order(ByteOrder.LITTLE_ENDIAN);
+//			int[] fdArray = new int[frameData.remaining()/3];
+//			int pos = 0;
+//			byte[] rgb = new byte[3];
+//			while(frameData.remaining() >= 3) {
+//				frameData.get(rgb);
+//				fdArray[pos++] = 0xFF000000 | (rgb[0] << 16) | (rgb[1] << 8) | rgb[2];
+//			}
+//			
+//			img.setRGB(framePosX, framePosY, width, height, fdArray, 0, width);
+//			framePosX = (getWidth() - width) / 2;
+//			framePosY = (getHeight() - height) / 2;
+//
+//			graphics.drawImage(img, framePosX, framePosY, null);
+//		}
 
 		// draw hands
 		if(hands != null) {
@@ -169,13 +171,13 @@ public class Main extends Component implements VirtualScreenListener, VideoStrea
 	
 	@Override
 	public synchronized void onFrameReady(VideoStream stream) {
+		
 		if(frame != null) {
 			frame.release();
 			frame = null;
 		}
 
 		frame = stream.readFrame();
-		
 //		repaint();
 	}
 
@@ -199,7 +201,8 @@ public class Main extends Component implements VirtualScreenListener, VideoStrea
 		VirtualScreenManager.getInstance().initialize(new FlatVirtualScreen(), new StaticVirtualScreenInitializer(new Size(1,1), 1300));
 		
 		GestureManager.getInstance().registerGesture(new ClickGesture("click"));
-		GestureManager.getInstance().registerGesture(new PanGesture("pan"));
+		GestureManager.getInstance().registerGesture(new PanGesture("swipe-left", EnumSet.<PanGesture.Direction>of(PanGesture.Direction.LEFT), false));
+		GestureManager.getInstance().registerGesture(new PanGesture("swipe-right", EnumSet.<PanGesture.Direction>of(PanGesture.Direction.RIGHT), false));
 		GestureManager.getInstance().registerGesture(new ZoomGesture("zoom"));
 		
 		GestureManager.getInstance().addGestureListener(new GestureListener() {
@@ -223,6 +226,14 @@ public class Main extends Component implements VirtualScreenListener, VideoStrea
 			@Override
 			public void onGestureCompleted(GestureData gesture) {
 				System.out.println("Gesture completed: " + gesture.getName());
+				if(gesture.hasData("startPoint")) {
+					Point2D<Float> startPoint = gesture.<Point2D<Float>>getData("startPoint");
+					System.out.println("Initial position: (" + startPoint.getX() + ", " + startPoint.getY() + ")");
+				}
+				if(gesture.hasData("initialDistance")) {
+					Float dist = gesture.<Float>getData("initialDistance");
+					System.out.println("Initial distance: " + dist.floatValue());
+				}
 				for(HandData gd : gesture.getHands()) {
 					System.out.println("Position: (" + gd.getPosition().getX() + "," + gd.getPosition().getY() + ")");
 				}

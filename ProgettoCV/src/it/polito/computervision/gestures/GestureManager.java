@@ -204,7 +204,7 @@ public class GestureManager implements VirtualScreenListener {
 	 * @param hands The {@link HandData} of the current frame
 	 */
 	private void notifyGestureStarted(Collection<HandData> hands, Gesture gesture) {
-		GestureData gd = new GestureData(gesture.getName(), gesture.getCurrentState(), hands, gesture.isLive());
+		GestureData gd = new GestureData(gesture.getName(), gesture.getCurrentState(), hands, gesture.getData(), gesture.isLive());
 		for(GestureListener l : listeners) {
 			l.onGestureStarted(gd);
 		}
@@ -215,7 +215,7 @@ public class GestureManager implements VirtualScreenListener {
 	 * @param hands The {@link HandData} of the current frame
 	 */
 	private void notifyGestureInProgress(Collection<HandData> hands, Gesture gesture) {
-		GestureData gd = new GestureData(gesture.getName(), gesture.getCurrentState(), hands, gesture.isLive());
+		GestureData gd = new GestureData(gesture.getName(), gesture.getCurrentState(), hands, gesture.getData(), gesture.isLive());
 		for(GestureListener l : listeners) {
 			l.onGestureInProgress(gd);
 		}
@@ -226,7 +226,7 @@ public class GestureManager implements VirtualScreenListener {
 	 * @param hands The {@link HandData} of the current frame
 	 */
 	private void notifyGestureCompleted(Collection<HandData> hands, Gesture gesture) {
-		GestureData gd = new GestureData(gesture.getName(), gesture.getCurrentState(), hands, gesture.isLive());
+		GestureData gd = new GestureData(gesture.getName(), gesture.getCurrentState(), hands, gesture.getData(), gesture.isLive());
 		for(GestureListener l : listeners) {
 			l.onGestureCompleted(gd);
 		}

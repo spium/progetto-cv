@@ -44,6 +44,7 @@ public class ZoomGesture extends TwoHandGesture {
 	protected void doReset() {
 		super.doReset();
 		initialDistance = -1;
+		data.remove("initialDistance");
 	}
 	
 	/**
@@ -78,6 +79,7 @@ public class ZoomGesture extends TwoHandGesture {
 				
 				if(Math.abs(diff) >= detectionThreshold) {
 					if(direction == Direction.BOTH || (direction == Direction.OUTWARD && diff > 0) || (direction == Direction.INWARD && diff < 0)) {
+						data.put("initialDistance", Math.abs(diff));
 						return GestureState.IN_PROGRESS;
 					}
 					else {

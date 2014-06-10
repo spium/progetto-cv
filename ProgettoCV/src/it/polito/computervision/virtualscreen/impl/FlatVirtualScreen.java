@@ -3,8 +3,6 @@
  */
 package it.polito.computervision.virtualscreen.impl;
 
-import com.primesense.nite.HandTracker;
-
 import org.opencv.core.Size;
 import org.openni.Point2D;
 

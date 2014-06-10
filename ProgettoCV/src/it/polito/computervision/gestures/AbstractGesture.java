@@ -4,7 +4,10 @@ import it.polito.computervision.virtualscreen.HandData;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Implements the common functionality of a gesture (getters and {@link GestureState} update).
@@ -17,6 +20,7 @@ public abstract class AbstractGesture implements Gesture {
 	private String name;
 	protected GestureState currentState;
 	private boolean live;
+	protected Map<String, Object> data;
 	
 	/**
 	 * Creates a new gesture
@@ -26,6 +30,7 @@ public abstract class AbstractGesture implements Gesture {
 	public AbstractGesture(String name, boolean live) {
 		this.name = name;
 		this.live = live;
+		data = new HashMap<String, Object>();
 		currentState = GestureState.NOT_DETECTED;
 	}
 
@@ -51,6 +56,15 @@ public abstract class AbstractGesture implements Gesture {
 	@Override
 	public boolean isLive() {
 		return live;
+	}
+	
+	/**
+	 * 
+	 * {@inheritDoc}
+	 */
+	@Override
+	public Map<String, Object> getData() {
+		return Collections.unmodifiableMap(data);
 	}
 	
 	/**
