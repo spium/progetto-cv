@@ -45,6 +45,7 @@ public class ZoomGesture extends TwoHandGesture {
 		super.doReset();
 		initialDistance = -1;
 		data.remove("initialDistance");
+		data.remove("currentDistance");
 	}
 	
 	/**
@@ -79,7 +80,7 @@ public class ZoomGesture extends TwoHandGesture {
 				
 				if(Math.abs(diff) >= detectionThreshold) {
 					if(direction == Direction.BOTH || (direction == Direction.OUTWARD && diff > 0) || (direction == Direction.INWARD && diff < 0)) {
-						data.put("initialDistance", Math.abs(diff));
+						data.put("initialDistance", initialDistance);
 						return GestureState.IN_PROGRESS;
 					}
 					else {
@@ -99,14 +100,16 @@ public class ZoomGesture extends TwoHandGesture {
 					if(!hands[i].isTouching())
 						return isLive() ? GestureState.COMPLETED : GestureState.NOT_DETECTED;
 				
-				if(isLive()) return GestureState.IN_PROGRESS;
-				
-				//if not live, check if we reached the threshold
+				//check if we reached the threshold
 				for(int i = 0; i < 2; ++i)
 					handPoints[i] = new MatOfFloat(hands[i].getPosition().getX(), hands[i].getPosition().getY());
 				
 				Core.subtract(handPoints[0], handPoints[1], handPoints[0]);
 				float currDistance = (float) Core.norm(handPoints[0]);
+				
+				data.put("currentDistance", currDistance);
+				if(isLive()) return GestureState.IN_PROGRESS;
+				
 				float diff = currDistance - initialDistance;
 				
 				if(Math.abs(diff) >= completionThreshold) {

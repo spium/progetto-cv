@@ -2,7 +2,7 @@ package it.polito.computervision.gestures;
 
 import it.polito.computervision.virtualscreen.HandData;
 
-import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -17,7 +17,7 @@ public interface Gesture {
 	 * @param gestureHands (out) The set of {@link HandData} this gesture is tracking
 	 * @return the {@link GestureState} this gesture is in after the call
 	 */
-	public GestureState updateState(Collection<HandData> hands, Collection<HandData> gestureHands);
+	public GestureState updateState(List<HandData> hands, List<HandData> gestureHands);
 	/**
 	 * 
 	 * @return The {@link GestureState} this gesture is currently in

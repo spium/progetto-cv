@@ -2,7 +2,6 @@ package it.polito.computervision.gestures;
 
 import it.polito.computervision.virtualscreen.HandData;
 
-import java.util.Collection;
 import java.util.List;
 
 public abstract class TwoHandGesture extends AbstractGesture {
@@ -16,27 +15,18 @@ public abstract class TwoHandGesture extends AbstractGesture {
 		currentlyTrackedHands = null;
 	}
 
-	private boolean trackingBothHands(Collection<HandData> hands) {
-		if(handIds != null) {
-			short tracking = 0;
-			for(int i = 0; i < 2; ++i) {
-				for(HandData hd : hands) {
-					if(hd.getId() == handIds[i]) {
-						++tracking;
-						currentlyTrackedHands[i] = hd;
-						break;
-					}
-				}
-			}
-			
-			if(tracking == 2) return true;
+	private boolean trackingBothHands(List<HandData> hands) {
+		if(handIds != null && hands.size() == 2) {
+			short id0 = hands.get(0).getId(), id1 = hands.get(1).getId();
+			if((id0 == handIds[0] && id1 == handIds[1]) || (id0 == handIds[1] && id1 == handIds[0]))
+				return true;
 		}
 		
 		return false;
 	}
 
 	@Override
-	public GestureState updateState(Collection<HandData> hands, Collection<HandData> gestureHands) {
+	public GestureState updateState(List<HandData> hands, List<HandData> gestureHands) {
 		List<HandData> touching = getTouchingHands(hands);
 		boolean touchReleased = false;
 		if(touching.size() == 2) {
@@ -87,7 +77,7 @@ public abstract class TwoHandGesture extends AbstractGesture {
 	}
 
 	/**
-	 * Concrete gestures must implement this method. The semantics are the same of {@link Gesture#updateState(Collection, Collection)}.
+	 * Concrete gestures must implement this method. The semantics are the same of {@link Gesture#updateState(List, List)}.
 	 * @param currentlyTrackedHands The {@link HandData} currently touching the virtual screen or null if not exactly 2 hands are touching the screen
 	 * @return The {@link GestureState} this gesture is in after the update.
 	 */

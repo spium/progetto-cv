@@ -53,6 +53,7 @@ import edu.uci.ics.jung.algorithms.layout.Layout;
 import edu.uci.ics.jung.visualization.BasicVisualizationServer;
 import edu.uci.ics.jung.visualization.RenderContext;
 import edu.uci.ics.jung.visualization.VisualizationServer;
+import edu.uci.ics.jung.visualization.VisualizationViewer;
 
 import org.openni.Point2D;
 
@@ -64,14 +65,16 @@ public class Main implements VirtualScreenListener, VisualizationServer.Paintabl
 	private boolean mShouldRun = true;
 //		private VideoStream stream;
 //		private VideoFrameRef frame;
-	private Collection<HandData> hands;
+	private List<HandData> hands;
 	private BasicVisualizationServer<RDFNode, Statement> viz;
+	int width, height;
 
-	public Main(BasicVisualizationServer<RDFNode, Statement> viz) {
+	public Main(BasicVisualizationServer<RDFNode, Statement> viz, int frameWidth, int frameHeight) {
 		hands = null;
 //		this.stream = stream;
 		this.viz = viz;
-
+		width = frameWidth;
+		height = frameHeight;
 		this.viz.addPostRenderPaintable(this);
 
 //				stream.setMirroringEnabled(true);
@@ -152,9 +155,9 @@ public class Main implements VirtualScreenListener, VisualizationServer.Paintabl
 //					}
 //					
 //					img.setRGB(framePosX, framePosY, width, height, fdArray, 0, width);
-					Size frameSize = VirtualScreenManager.getInstance().getFrameSize();
-					framePosX = (mFrame.getWidth() - (int) frameSize.width) / 2;
-					framePosY = (mFrame.getHeight() - (int) frameSize.height) / 2;
+					//Size frameSize = VirtualScreenManager.getInstance().getFrameSize();
+					framePosX = (mFrame.getWidth() - (int) width) / 2;
+					framePosY = (mFrame.getHeight() - (int) height) / 2;
 		
 //					graphics.drawImage(img, framePosX, framePosY, null);
 //				}
@@ -179,11 +182,11 @@ public class Main implements VirtualScreenListener, VisualizationServer.Paintabl
 	
 	@Override
 	public boolean useTransform() {
-		return true;
+		return false;
 	}
 
 	@Override
-	public synchronized void onNewFrame(Collection<HandData> hands) {
+	public synchronized void onNewFrame(List<HandData> hands) {
 
 		this.hands = hands;
 		mFrame.repaint();
@@ -220,50 +223,50 @@ public class Main implements VirtualScreenListener, VisualizationServer.Paintabl
 		VirtualScreenManager.getInstance().start(2);
 		VirtualScreenManager.getInstance().initialize(new FlatVirtualScreen(), new StaticVirtualScreenInitializer(new Size(1,1), 1300));
 
-		GestureManager.getInstance().registerGesture(new ClickGesture("click"));
-		GestureManager.getInstance().registerGesture(new PanGesture("swipe-left", EnumSet.<PanGesture.Direction>of(PanGesture.Direction.LEFT), false));
-		GestureManager.getInstance().registerGesture(new PanGesture("swipe-right", EnumSet.<PanGesture.Direction>of(PanGesture.Direction.RIGHT), false));
+//		GestureManager.getInstance().registerGesture(new ClickGesture("click"));
+//		GestureManager.getInstance().registerGesture(new PanGesture("swipe-left", EnumSet.<PanGesture.Direction>of(PanGesture.Direction.LEFT), false));
+//		GestureManager.getInstance().registerGesture(new PanGesture("swipe-right", EnumSet.<PanGesture.Direction>of(PanGesture.Direction.RIGHT), false));
 		GestureManager.getInstance().registerGesture(new ZoomGesture("zoom"));
 
-		GestureManager.getInstance().addGestureListener(new GestureListener() {
-
-			@Override
-			public void onGestureStarted(GestureData gesture) {
-				System.out.println("Gesture started: " + gesture.getName());
-				for(HandData gd : gesture.getHands()) {
-					System.out.println("Position: (" + gd.getPosition().getX() + "," + gd.getPosition().getY() + ")");
-				}
-			}
-
-			@Override
-			public void onGestureInProgress(GestureData gesture) {
-				System.out.println("Gesture in progress: " + gesture.getName());
-				for(HandData gd : gesture.getHands()) {
-					System.out.println("Position: (" + gd.getPosition().getX() + "," + gd.getPosition().getY() + ")");
-				}
-			}
-
-			@Override
-			public void onGestureCompleted(GestureData gesture) {
-				System.out.println("Gesture completed: " + gesture.getName());
-				if(gesture.hasData("startPoint")) {
-					Point2D<Float> startPoint = gesture.<Point2D<Float>>getData("startPoint");
-					System.out.println("Initial position: (" + startPoint.getX() + ", " + startPoint.getY() + ")");
-				}
-				if(gesture.hasData("initialDistance")) {
-					Float dist = gesture.<Float>getData("initialDistance");
-					System.out.println("Initial distance: " + dist.floatValue());
-				}
-				for(HandData gd : gesture.getHands()) {
-					System.out.println("Position: (" + gd.getPosition().getX() + "," + gd.getPosition().getY() + ")");
-				}
-			}
-
-		});
+//		GestureManager.getInstance().addGestureListener(new GestureListener() {
+//
+//			@Override
+//			public void onGestureStarted(GestureData gesture) {
+//				System.out.println("Gesture started: " + gesture.getName());
+//				for(HandData gd : gesture.getHands()) {
+//					System.out.println("Position: (" + gd.getPosition().getX() + "," + gd.getPosition().getY() + ")");
+//				}
+//			}
+//
+//			@Override
+//			public void onGestureInProgress(GestureData gesture) {
+//				System.out.println("Gesture in progress: " + gesture.getName());
+//				for(HandData gd : gesture.getHands()) {
+//					System.out.println("Position: (" + gd.getPosition().getX() + "," + gd.getPosition().getY() + ")");
+//				}
+//			}
+//
+//			@Override
+//			public void onGestureCompleted(GestureData gesture) {
+//				System.out.println("Gesture completed: " + gesture.getName());
+//				if(gesture.hasData("startPoint")) {
+//					Point2D<Float> startPoint = gesture.<Point2D<Float>>getData("startPoint");
+//					System.out.println("Initial position: (" + startPoint.getX() + ", " + startPoint.getY() + ")");
+//				}
+//				if(gesture.hasData("initialDistance")) {
+//					Float dist = gesture.<Float>getData("initialDistance");
+//					System.out.println("Initial distance: " + dist.floatValue());
+//				}
+//				for(HandData gd : gesture.getHands()) {
+//					System.out.println("Position: (" + gd.getPosition().getX() + "," + gd.getPosition().getY() + ")");
+//				}
+//			}
+//
+//		});
 
 		GestureManager.getInstance().start();
 
-		String resource = "http://www.w3.org/TR/owl-guide/wine.rdf";
+		String resource = "res/example.owl";
 
 		System.out.print("Loading model...");
 		Model model = FileManager.get().loadModel(resource);
@@ -285,14 +288,17 @@ public class Main implements VirtualScreenListener, VisualizationServer.Paintabl
 		height -= 2*Main.BORDER;
 		
 		layout.setSize(new Dimension(width, height));
-		BasicVisualizationServer<RDFNode, Statement> viz = new BasicVisualizationServer<RDFNode, Statement>(layout, new Dimension(width, height));
+		VisualizationViewer<RDFNode, Statement> viz = new VisualizationViewer<RDFNode, Statement>(layout, new Dimension(width, height));
 		RenderContext<RDFNode, Statement> context = viz.getRenderContext();
 		context.setEdgeLabelTransformer(Transformers.EDGE);
 		context.setVertexLabelTransformer(Transformers.NODE);
+		HandTrackingModalMouse mouse = new HandTrackingModalMouse(viz);
+		GestureManager.getInstance().addGestureListener(mouse);
+		viz.setGraphMouse(mouse);
 
 		viz.setSize(new Dimension(width, height));
 
-		final Main app = new Main(viz);
+		final Main app = new Main(viz, width, height);
 		VirtualScreenManager.getInstance().addVirtualScreenListener(app);
 		System.out.println("About to run");
 		app.run();

@@ -1,10 +1,10 @@
 package it.polito.computervision.gestures;
 
 import java.util.ArrayList;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 
 import it.polito.computervision.gestures.Gesture;
 import it.polito.computervision.virtualscreen.HandData;
@@ -44,7 +44,7 @@ public class GestureManager implements VirtualScreenListener {
 	 * {@inheritDoc}
 	 */
 	@Override
-	public synchronized void onNewFrame(Collection<HandData> hands) {
+	public synchronized void onNewFrame(List<HandData> hands) {
 		ArrayList<HandData> gestureHands = new ArrayList<HandData>();
 		if(gestureInProgress != null) {
 			//we have a gesture in progress, only update this one

@@ -27,7 +27,7 @@ public abstract class OneHandGesture extends AbstractGesture {
 
 
 	@Override
-	public GestureState updateState(Collection<HandData> hands, Collection<HandData> gestureHands) {
+	public GestureState updateState(List<HandData> hands, List<HandData> gestureHands) {
 		List<HandData> touching = getTouchingHands(hands);
 		boolean touchReleased = false;
 		HandData currentlyTrackedHand = null;
