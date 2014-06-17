@@ -11,7 +11,6 @@ import it.polito.computervision.actions.ActionManager;
 import it.polito.computervision.gestures.GestureData;
 import it.polito.computervision.gestures.GestureListener;
 import it.polito.computervision.virtualscreen.HandData;
-import edu.uci.ics.jung.visualization.VisualizationServer;
 import edu.uci.ics.jung.visualization.VisualizationViewer;
 import edu.uci.ics.jung.visualization.control.CrossoverScalingControl;
 import edu.uci.ics.jung.visualization.control.DefaultModalGraphMouse;
