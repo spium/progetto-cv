@@ -7,12 +7,12 @@ import java.util.List;
 public abstract class TwoHandGesture extends AbstractGesture {
 
 	private short[] handIds;
-	private HandData[] currentlyTrackedHands;
+	private HandData[] lastKnownHands;
 
 	public TwoHandGesture(String name, boolean live) {
 		super(name, live);
 		handIds = null;
-		currentlyTrackedHands = null;
+		lastKnownHands = null;
 	}
 
 	private boolean trackingBothHands(List<HandData> hands) {
@@ -21,20 +21,26 @@ public abstract class TwoHandGesture extends AbstractGesture {
 			if((id0 == handIds[0] && id1 == handIds[1]) || (id0 == handIds[1] && id1 == handIds[0]))
 				return true;
 		}
-		
+
 		return false;
 	}
 
 	@Override
 	public GestureState updateState(List<HandData> hands, List<HandData> gestureHands) {
+		HandData[] currentlyTrackedHands = null;
 		List<HandData> touching = getTouchingHands(hands);
 		boolean touchReleased = false;
 		if(touching.size() == 2) {
 			if(handIds != null) {
 				//we were tracking 2 hands, check if they're both there
 				//two hands touching, but at least one is new, something odd is happening, just reset
-				if(!trackingBothHands(touching))
-					doReset();
+				if(trackingBothHands(touching)) {
+					currentlyTrackedHands = new HandData[2];
+					currentlyTrackedHands[0] = touching.get(0);
+					currentlyTrackedHands[1] = touching.get(1);
+				}
+				else
+					reset();
 			}
 			else {
 				//we were not tracking, take the 2 hands that are touching now
@@ -52,21 +58,28 @@ public abstract class TwoHandGesture extends AbstractGesture {
 				if(trackingBothHands(hands)) {
 					//if we are still tracking the two hands, send the touchReleased
 					touchReleased = true;
+					currentlyTrackedHands = new HandData[2];
+					currentlyTrackedHands[0] = hands.get(0);
+					currentlyTrackedHands[1] = hands.get(1);
 				}
 				else {
 					//we lost tracking on at least a hand
-					doReset();
+					reset();
 				}
 
 			}
 			else if(touching.size() > 2)
-				doReset();
+				reset();
 
 		}
 
 		if(currentlyTrackedHands != null) {
-			gestureHands.add(currentlyTrackedHands[0]);
-			gestureHands.add(currentlyTrackedHands[1]);
+			lastKnownHands = currentlyTrackedHands;
+		}
+		
+		if(lastKnownHands != null) {
+			gestureHands.add(lastKnownHands[0]);
+			gestureHands.add(lastKnownHands[1]);
 		}
 
 		currentState = doUpdateState(currentlyTrackedHands, touchReleased);
@@ -86,7 +99,7 @@ public abstract class TwoHandGesture extends AbstractGesture {
 	@Override
 	protected void doReset() {
 		handIds = null;
-		currentlyTrackedHands = null;
+		lastKnownHands = null;
 	}
 
 }

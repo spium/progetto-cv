@@ -1,5 +1,6 @@
 package it.polito.computervision.controller;
 
+import it.polito.computervision.actions.ActionManager;
 import it.polito.computervision.gestures.GestureData;
 import it.polito.computervision.gestures.GestureListener;
 import it.polito.computervision.gestures.GestureManager;
@@ -66,10 +67,10 @@ public class Main implements VirtualScreenListener, VisualizationServer.Paintabl
 //		private VideoStream stream;
 //		private VideoFrameRef frame;
 	private List<HandData> hands;
-	private BasicVisualizationServer<RDFNode, Statement> viz;
+	private VisualizationViewer<RDFNode, Statement> viz;
 	int width, height;
 
-	public Main(BasicVisualizationServer<RDFNode, Statement> viz, int frameWidth, int frameHeight) {
+	public Main(VisualizationViewer<RDFNode, Statement> viz, int frameWidth, int frameHeight) {
 		hands = null;
 //		this.stream = stream;
 		this.viz = viz;
@@ -226,6 +227,7 @@ public class Main implements VirtualScreenListener, VisualizationServer.Paintabl
 //		GestureManager.getInstance().registerGesture(new ClickGesture("click"));
 //		GestureManager.getInstance().registerGesture(new PanGesture("swipe-left", EnumSet.<PanGesture.Direction>of(PanGesture.Direction.LEFT), false));
 //		GestureManager.getInstance().registerGesture(new PanGesture("swipe-right", EnumSet.<PanGesture.Direction>of(PanGesture.Direction.RIGHT), false));
+		GestureManager.getInstance().registerGesture(new PanGesture("pan"));
 		GestureManager.getInstance().registerGesture(new ZoomGesture("zoom"));
 
 //		GestureManager.getInstance().addGestureListener(new GestureListener() {
@@ -293,13 +295,16 @@ public class Main implements VirtualScreenListener, VisualizationServer.Paintabl
 		context.setEdgeLabelTransformer(Transformers.EDGE);
 		context.setVertexLabelTransformer(Transformers.NODE);
 		HandTrackingModalMouse mouse = new HandTrackingModalMouse(viz);
-		GestureManager.getInstance().addGestureListener(mouse);
+		//GestureManager.getInstance().addGestureListener(mouse);
 		viz.setGraphMouse(mouse);
 
 		viz.setSize(new Dimension(width, height));
 
 		final Main app = new Main(viz, width, height);
 		VirtualScreenManager.getInstance().addVirtualScreenListener(app);
+		
+		ActionManager.getInstance().start();
+		
 		System.out.println("About to run");
 		app.run();
 	}

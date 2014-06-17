@@ -13,15 +13,18 @@ import java.util.List;
 public abstract class OneHandGesture extends AbstractGesture {
 
 	private short handId;
+	private HandData lastKnownHand;
 
 	public OneHandGesture(String name, boolean live) {
 		super(name, live);
 		handId = -1;
+		lastKnownHand = null;
 	}
 
 	@Override
 	protected void doReset() {
 		handId = -1;
+		lastKnownHand = null;
 	}
 
 
@@ -46,7 +49,7 @@ public abstract class OneHandGesture extends AbstractGesture {
 			else {
 				//we are here because we had an ID but it's not the one touching anymore -> reset
 				//at the next frame we'll track it if it's still there
-				doReset();
+				reset();
 			}
 
 		}
@@ -64,9 +67,12 @@ public abstract class OneHandGesture extends AbstractGesture {
 			}
 		}
 		
-		if(currentlyTrackedHand != null)
-			gestureHands.add(currentlyTrackedHand);
-
+		if(currentlyTrackedHand != null) {
+			lastKnownHand = currentlyTrackedHand;
+		}
+		
+		if(lastKnownHand != null)
+			gestureHands.add(lastKnownHand);
 
 		currentState = doUpdateState(currentlyTrackedHand, touchReleased);
 		//let the implementation decide when to reset

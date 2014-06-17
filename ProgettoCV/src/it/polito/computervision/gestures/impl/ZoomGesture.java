@@ -77,7 +77,6 @@ public class ZoomGesture extends TwoHandGesture {
 				Core.subtract(handPoints[0], handPoints[1], handPoints[0]);
 				float currDistance = (float) Core.norm(handPoints[0]);
 				float diff = currDistance - initialDistance;
-				
 				if(Math.abs(diff) >= detectionThreshold) {
 					if(direction == Direction.BOTH || (direction == Direction.OUTWARD && diff > 0) || (direction == Direction.INWARD && diff < 0)) {
 						data.put("initialDistance", initialDistance);

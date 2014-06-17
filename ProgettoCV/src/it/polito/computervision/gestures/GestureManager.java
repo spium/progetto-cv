@@ -52,7 +52,7 @@ public class GestureManager implements VirtualScreenListener {
 			GestureState newState = gestureInProgress.updateState(hands, gestureHands);
 			if(oldState != newState)
 				System.out.println(gestureInProgress.getName() + ": " + oldState.toString() + " => " + newState.toString());
-			notifyListeners(Collections.unmodifiableCollection(gestureHands), gestureInProgress, oldState);
+			notifyListeners(Collections.unmodifiableList(gestureHands), gestureInProgress, oldState);
 			
 			if(newState != GestureState.IN_PROGRESS && newState != GestureState.COMPLETED) {
 				//remove it if it's no longer in progress or complete
@@ -67,7 +67,7 @@ public class GestureManager implements VirtualScreenListener {
 				GestureState newState = g.updateState(hands, gestureHands);
 				if(oldState != newState)
 					System.out.println(g.getName() + ": " + oldState.toString() + " -> " + newState.toString());
-				notifyListeners(Collections.unmodifiableCollection(gestureHands), g, oldState);
+				notifyListeners(Collections.unmodifiableList(gestureHands), g, oldState);
 				
 				if(newState == GestureState.IN_PROGRESS) {
 					//if a gesture is in progress, remember it, break out of the loop and reset all other gestures
@@ -179,7 +179,7 @@ public class GestureManager implements VirtualScreenListener {
 	 * @param gesture The gesture that may be firing the event.
 	 * @param oldState The old {@link GestureState} the gesture was in.
 	 */
-	private void notifyListeners(Collection<HandData> hands, Gesture gesture, GestureState oldState) {
+	private void notifyListeners(List<HandData> hands, Gesture gesture, GestureState oldState) {
 		GestureState currentState = gesture.getCurrentState();
 		
 		if(currentState == GestureState.IN_PROGRESS) {
@@ -203,7 +203,7 @@ public class GestureManager implements VirtualScreenListener {
 	 * Notifies listeners that the gesture is started (i.e. invokes {@link GestureListener#onGestureStarted(GestureData)})
 	 * @param hands The {@link HandData} of the current frame
 	 */
-	private void notifyGestureStarted(Collection<HandData> hands, Gesture gesture) {
+	private void notifyGestureStarted(List<HandData> hands, Gesture gesture) {
 		GestureData gd = new GestureData(gesture.getName(), gesture.getCurrentState(), hands, gesture.getData(), gesture.isLive());
 		for(GestureListener l : listeners) {
 			l.onGestureStarted(gd);
@@ -214,7 +214,7 @@ public class GestureManager implements VirtualScreenListener {
 	 * Notifies listeners that the gesture is in progress (i.e. invokes {@link GestureListener#onGestureInProgress(GestureData)})
 	 * @param hands The {@link HandData} of the current frame
 	 */
-	private void notifyGestureInProgress(Collection<HandData> hands, Gesture gesture) {
+	private void notifyGestureInProgress(List<HandData> hands, Gesture gesture) {
 		GestureData gd = new GestureData(gesture.getName(), gesture.getCurrentState(), hands, gesture.getData(), gesture.isLive());
 		for(GestureListener l : listeners) {
 			l.onGestureInProgress(gd);
@@ -225,7 +225,7 @@ public class GestureManager implements VirtualScreenListener {
 	 * Notifies listeners that the gesture has completed (i.e. invokes {@link GestureListener#onGestureCompleted(GestureData)})
 	 * @param hands The {@link HandData} of the current frame
 	 */
-	private void notifyGestureCompleted(Collection<HandData> hands, Gesture gesture) {
+	private void notifyGestureCompleted(List<HandData> hands, Gesture gesture) {
 		GestureData gd = new GestureData(gesture.getName(), gesture.getCurrentState(), hands, gesture.getData(), gesture.isLive());
 		for(GestureListener l : listeners) {
 			l.onGestureCompleted(gd);

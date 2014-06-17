@@ -230,7 +230,7 @@ public class VirtualScreenManager implements NewFrameListener {
 	 * Adds a new {@link VirtualScreenListener}
 	 * @param listener the {@link VirtualScreenListener}
 	 */
-	public void addVirtualScreenListener(VirtualScreenListener listener) {
+	public synchronized void addVirtualScreenListener(VirtualScreenListener listener) {
 		listeners.add(listener);
 	}
 
@@ -238,7 +238,7 @@ public class VirtualScreenManager implements NewFrameListener {
 	 * Removes a {@link VirtualScreenListener}
 	 * @param listener the {@link VirtualScreenListener}
 	 */
-	public void removeVirtualScreenListener(VirtualScreenListener listener) {
+	public synchronized void removeVirtualScreenListener(VirtualScreenListener listener) {
 		listeners.remove(listener);
 	}
 
