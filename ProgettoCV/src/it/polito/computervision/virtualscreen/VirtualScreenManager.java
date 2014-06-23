@@ -24,6 +24,7 @@ import com.primesense.nite.Point3D;
 public class VirtualScreenManager implements NewFrameListener {
 
 	private static final GestureType GESTURE_TYPE = GestureType.HAND_RAISE;
+	public static final float PROJECTED_POSITION_MULTIPLIER = 1.5f;
 
 	private static VirtualScreenManager instance = null;
 
@@ -256,7 +257,7 @@ public class VirtualScreenManager implements NewFrameListener {
 					Point3D<Float> pos = hd.getPosition();
 					com.primesense.nite.Point2D<Float> depthPos = tracker.convertHandCoordinatesToDepth(pos);
 					//mirror on the X axis
-					org.openni.Point2D<Float> projPos = new org.openni.Point2D<Float>(lastFrame.getDepthFrame().getWidth() - depthPos.getX(), depthPos.getY());
+					org.openni.Point2D<Float> projPos = new org.openni.Point2D<Float>((lastFrame.getDepthFrame().getWidth() - depthPos.getX())*PROJECTED_POSITION_MULTIPLIER, depthPos.getY()*PROJECTED_POSITION_MULTIPLIER);
 					hands.add(new HandData(hd.getId(), vscreen.get2DProjection(pos), projPos, vscreen.isTouching(pos)));
 				}
 			}

@@ -1,5 +1,7 @@
 package it.polito.computervision.gestures.impl;
 
+import org.openni.Point2D;
+
 import it.polito.computervision.gestures.Gesture;
 import it.polito.computervision.gestures.GestureState;
 import it.polito.computervision.gestures.OneHandGesture;
@@ -14,6 +16,7 @@ import it.polito.computervision.virtualscreen.VirtualScreen;
  */
 public class ClickGesture extends OneHandGesture {
 
+	private Point2D<Float> initialPosition;
 	
 	/**
 	 * Creates a ClickGesture with the given name
@@ -30,10 +33,23 @@ public class ClickGesture extends OneHandGesture {
 	public GestureState doUpdateState(HandData currentlyTrackedHand, boolean touchReleased) {
 		switch(currentState) {
 		case NOT_DETECTED:
-			return (currentlyTrackedHand != null) ? GestureState.POSSIBLE_DETECTION : GestureState.NOT_DETECTED;
+			if(currentlyTrackedHand != null) {
+				initialPosition = currentlyTrackedHand.getProjectedPosition();
+				return GestureState.POSSIBLE_DETECTION;
+			}
+			else
+				return GestureState.NOT_DETECTED;
 
 		case POSSIBLE_DETECTION:
-			return (currentlyTrackedHand != null && currentlyTrackedHand.isTouching()) ? GestureState.POSSIBLE_DETECTION : touchReleased ? GestureState.IN_PROGRESS : GestureState.NOT_DETECTED;
+			if(currentlyTrackedHand != null && currentlyTrackedHand.isTouching()) { 
+				return GestureState.POSSIBLE_DETECTION;
+			}
+			else if(touchReleased) {
+				data.put("initialPosition", initialPosition);
+				return GestureState.IN_PROGRESS;
+			}
+			else
+				return GestureState.NOT_DETECTED;
 
 		case IN_PROGRESS:
 			return GestureState.COMPLETED;
@@ -41,6 +57,13 @@ public class ClickGesture extends OneHandGesture {
 		default:	//COMPLETED or unknown state...
 			return GestureState.NOT_DETECTED;
 		}
+	}
+	
+	@Override
+	protected void doReset() {
+		super.doReset();
+		initialPosition = null;
+		data.remove("initialPosition");
 	}
 
 }

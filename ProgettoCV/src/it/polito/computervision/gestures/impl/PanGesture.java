@@ -21,7 +21,7 @@ public class PanGesture extends OneHandGesture {
 
 	public enum Direction { LEFT, RIGHT, UP, DOWN }
 	 
-	public static final float DETECTION_THRESHOLD = 80.f;
+	public static final float DETECTION_THRESHOLD = 100.f;
 	public static final float COMPLETION_THRESHOLD = 300.f;
 	
 	private static final double PI_4 = Math.PI / 4;
@@ -29,6 +29,7 @@ public class PanGesture extends OneHandGesture {
 	private MatOfFloat startPoint;
 	private float detectionThreshold, completionThreshold;
 	private EnumSet<Direction> directions;
+	private Point2D<Float> initialPosition;
 
 	public PanGesture(String name) {
 		this(name, EnumSet.allOf(Direction.class), DETECTION_THRESHOLD, COMPLETION_THRESHOLD, true);
@@ -55,13 +56,15 @@ public class PanGesture extends OneHandGesture {
 		this.directions = directions;
 		this.completionThreshold = completionThreshold;
 		startPoint = null;
+		initialPosition = null;
 	}
 
 	@Override
 	protected void doReset() {
 		super.doReset();
 		startPoint = null;
-		data.remove("startPoint");
+		initialPosition = null;
+		data.remove("initialPosition");
 	}
 	
 	/**
@@ -73,6 +76,7 @@ public class PanGesture extends OneHandGesture {
 		case NOT_DETECTED:
 				if(currentlyTrackedHand != null) {
 					startPoint = new MatOfFloat(currentlyTrackedHand.getPosition().getX(), currentlyTrackedHand.getPosition().getY());
+					initialPosition = currentlyTrackedHand.getProjectedPosition();
 					return GestureState.POSSIBLE_DETECTION;
 				}
 				else
@@ -90,7 +94,7 @@ public class PanGesture extends OneHandGesture {
 							(directions.contains(Direction.LEFT) && (angleRad > 3*PI_4 || angleRad < -3*PI_4)) ||
 							(directions.contains(Direction.DOWN) && angleRad >= -3*PI_4 && angleRad <= -PI_4)) {
 						
-						data.put("startPoint", new Point2D<Float>((float) startPoint.get(0, 0)[0], (float) startPoint.get(1, 0)[0]));
+						data.put("initialPosition", initialPosition);
 						return GestureState.IN_PROGRESS;
 					}
 					else
