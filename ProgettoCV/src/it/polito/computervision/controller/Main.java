@@ -97,19 +97,12 @@ public class Main {
 		VirtualScreenManager.getInstance().start(2);
 		VirtualScreenManager.getInstance().initialize(new FlatVirtualScreen(), new StaticVirtualScreenInitializer(new Size(1,1), 1000));
 
-		GestureManager.getInstance().registerGesture(new ClickGesture("click"));
-//		GestureManager.getInstance().registerGesture(new PanGesture("swipe-left", EnumSet.<PanGesture.Direction>of(PanGesture.Direction.LEFT), false));
-//		GestureManager.getInstance().registerGesture(new PanGesture("swipe-right", EnumSet.<PanGesture.Direction>of(PanGesture.Direction.RIGHT), false));
-		GestureManager.getInstance().registerGesture(new PanGesture("pan"));
-		GestureManager.getInstance().registerGesture(new ZoomGesture("zoom"));
-
-		GestureManager.getInstance().start();
-		
-		String resource = "res/example.owl";
+//		String resource = "res/example.owl";
+		String resource = "http://www.w3.org/TR/owl-guide/wine.rdf";
 
 		final Main app = new Main(resource);
 		
-		ActionManager.getInstance().start();
+		
 				
 		System.out.println("About to run");
 		app.run();

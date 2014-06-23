@@ -191,7 +191,7 @@ public class VirtualScreenManager implements NewFrameListener {
 	 * 
 	 * @return true if the VirtualScreenManager has been correctly initialized, false otherwise
 	 */
-	public boolean isInitialized() {
+	public synchronized boolean isInitialized() {
 		return initDone && initialized;
 	}
 
@@ -199,7 +199,7 @@ public class VirtualScreenManager implements NewFrameListener {
 	 * 
 	 * @return the {@link VirtualScreen} this manager is using, or null if it hasn't been initialized yet
 	 */
-	public VirtualScreen getVirtualScreen() {
+	public synchronized VirtualScreen getVirtualScreen() {
 		return vscreen;
 	}
 

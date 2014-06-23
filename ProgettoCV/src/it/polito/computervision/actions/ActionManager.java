@@ -56,7 +56,7 @@ public class ActionManager implements GestureListener {
 	 * @param gestureName The name of the {@link Gesture} to bind to.
 	 * @param listener The {@link GestureListener} to bind.
 	 */
-	public void bind(String gestureName, GestureListener listener) {
+	public synchronized void bind(String gestureName, GestureListener listener) {
 		bindings.put(gestureName, listener);
 	}
 	
@@ -64,8 +64,12 @@ public class ActionManager implements GestureListener {
 	 * Unbinds the {@link GestureListener} bound to this {@link Gesture}.
 	 * @param gestureName The name of the {@link Gesture} to unbind from.
 	 */
-	public void unbind(String gestureName) {
+	public synchronized void unbind(String gestureName) {
 		bindings.remove(gestureName);
+	}
+	
+	public synchronized boolean isBound(String gestureName) {
+		return bindings.containsKey(gestureName);
 	}
 	
 	@Override

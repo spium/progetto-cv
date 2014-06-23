@@ -107,7 +107,7 @@ public class GestureManager implements VirtualScreenListener {
 	 * Adds a {@link GestureListener} to all registered gestures.
 	 * @param listener The listener to add
 	 */
-	public void addGestureListener(GestureListener listener) {
+	public synchronized void addGestureListener(GestureListener listener) {
 		listeners.add(listener);
 	}
 	
@@ -115,7 +115,7 @@ public class GestureManager implements VirtualScreenListener {
 	 * Removes the {@link GestureListener} from all registered gestures.
 	 * @param listener The listener to remove
 	 */
-	public void removeGestureListener(GestureListener listener) {
+	public synchronized void removeGestureListener(GestureListener listener) {
 		listeners.remove(listener);
 	}
 	
@@ -123,7 +123,7 @@ public class GestureManager implements VirtualScreenListener {
 	 * Registers a {@link Gesture} to be updated at each new frame
 	 * @param gesture The {@link Gesture} to register
 	 */
-	public void registerGesture(Gesture gesture) {
+	public synchronized void registerGesture(Gesture gesture) {
 		gestures.add(gesture);
 	}
 	
@@ -131,7 +131,7 @@ public class GestureManager implements VirtualScreenListener {
 	 * Unregisters the {@link Gesture}. It will no longer be updated on new frames
 	 * @param gesture The {@link Gesture} to unregister
 	 */
-	public void unregisterGesture(Gesture gesture) {
+	public synchronized void unregisterGesture(Gesture gesture) {
 		gestures.remove(gesture);
 		if(gestureInProgress == gesture)
 			gestureInProgress = null;
@@ -142,7 +142,7 @@ public class GestureManager implements VirtualScreenListener {
 	 * @param gestures The {@link Gesture}s to register
 	 * @see #registerGesture(Gesture)
 	 */
-	public void registerGestures(Collection<Gesture> gestures) {
+	public synchronized void registerGestures(Collection<Gesture> gestures) {
 		this.gestures.addAll(gestures);
 	}
 	
@@ -151,7 +151,7 @@ public class GestureManager implements VirtualScreenListener {
 	 * @param gestures The {@link Gesture}s to unregister
 	 * @see #unregisterGesture(Gesture)
 	 */
-	public void unregisterGestures(Collection<Gesture> gestures) {
+	public synchronized void unregisterGestures(Collection<Gesture> gestures) {
 		this.gestures.removeAll(gestures);
 		if(gestureInProgress != null && gestures.contains(gestureInProgress))
 			gestureInProgress = null;
@@ -160,7 +160,7 @@ public class GestureManager implements VirtualScreenListener {
 	/**
 	 * Unregisters all {@link Gesture}s
 	 */
-	public void unregisterAllGestures() {
+	public synchronized void unregisterAllGestures() {
 		gestures.clear();
 		gestureInProgress = null;
 	}
