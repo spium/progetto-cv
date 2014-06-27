@@ -2,9 +2,6 @@ package it.polito.computervision.controller;
 
 import it.polito.computervision.actions.ActionManager;
 import it.polito.computervision.gestures.GestureManager;
-import it.polito.computervision.gestures.impl.ClickGesture;
-import it.polito.computervision.gestures.impl.PanGesture;
-import it.polito.computervision.gestures.impl.ZoomGesture;
 import it.polito.computervision.virtualscreen.VirtualScreenManager;
 import it.polito.computervision.virtualscreen.impl.FlatVirtualScreen;
 import it.polito.computervision.virtualscreen.impl.StaticVirtualScreenInitializer;
@@ -18,6 +15,7 @@ import java.util.List;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
+import org.apache.jena.atlas.lib.ArrayUtils;
 import org.opencv.core.Core;
 import org.opencv.core.Size;
 import org.openni.Device;
@@ -32,7 +30,7 @@ public class Main {
 	private boolean mShouldRun = true;
 	private VisualizationController controller;
 
-	public Main(String resource) {
+	public Main(String resource, String[] roots) {
 
 		mFrame = new JFrame("NiTE Hand Tracker Viewer");
 
@@ -59,7 +57,7 @@ public class Main {
 			}
 		});
 		
-		controller = new VisualizationController(resource, mFrame);
+		controller = new VisualizationController(resource, roots, mFrame);
 		
 		mFrame.setVisible(true);
 	}
@@ -73,14 +71,13 @@ public class Main {
 			}
 		}
 		mFrame.dispose();
-		
-		GestureManager.getInstance().stop();
-		VirtualScreenManager.getInstance().destroy();
-		NiTE.shutdown();
-		OpenNI.shutdown();
 	}
 
-	public static void main(String s[]) {
+	public static void main(String argv[]) {
+		if(argv.length < 1) {
+			System.err.println("You must specify the ontology file");
+			return;
+		}
 		// initialize OpenNI and NiTE
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 		OpenNI.initialize();
@@ -95,16 +92,24 @@ public class Main {
 		Device.open(devicesInfo.get(0).getUri());
 
 		VirtualScreenManager.getInstance().start(2);
-		VirtualScreenManager.getInstance().initialize(new FlatVirtualScreen(), new StaticVirtualScreenInitializer(new Size(1,1), 1000));
+		VirtualScreenManager.getInstance().initialize(new FlatVirtualScreen(), new StaticVirtualScreenInitializer(new Size(1,1), 1500));		
 
-//		String resource = "res/example.owl";
-		String resource = "http://www.w3.org/TR/owl-guide/wine.rdf";
-
-		final Main app = new Main(resource);
+		String[] roots = null;
+		if(argv.length > 1) {
+			roots = new String[argv.length - 1];
+			for(int i = 0; i < argv.length-1; ++i)
+				roots[i] = argv[i+1];
+		}
 		
-		
+		final Main app = new Main(argv[0], roots);
 				
 		System.out.println("About to run");
 		app.run();
+		
+		ActionManager.getInstance().stop();
+		GestureManager.getInstance().stop();
+		VirtualScreenManager.getInstance().destroy();
+		NiTE.shutdown();
+		OpenNI.shutdown();
 	}
 }

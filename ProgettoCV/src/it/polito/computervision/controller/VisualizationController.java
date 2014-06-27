@@ -19,6 +19,7 @@ import java.awt.Paint;
 import java.awt.Shape;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Ellipse2D;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.EnumSet;
@@ -37,7 +38,10 @@ import org.openni.Point2D;
 import net.rootdev.jenajung.JenaJungGraph;
 import net.rootdev.jenajung.Transformers;
 
-import com.hp.hpl.jena.rdf.model.Model;
+import com.hp.hpl.jena.ontology.OntModel;
+import com.hp.hpl.jena.ontology.OntModelSpec;
+import com.hp.hpl.jena.ontology.OntTools;
+import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.util.FileManager;
@@ -68,7 +72,7 @@ public class VisualizationController {
 	public static final int LAYOUT_SIZE_MULTIPLIER = 2;
 
 	private VisualizationViewer<RDFNode, Statement> viewer;
-	private Model model;
+	private OntModel model;
 	private Graph<RDFNode, Statement> graph;
 	private Layout<RDFNode, Statement> layout;
 	private JenaJungGraph ontology;
@@ -83,13 +87,13 @@ public class VisualizationController {
 	private Map<String, Gesture> gestures;
 
 
-	public VisualizationController(String rdfResource, JFrame parent) {
+	public VisualizationController(String rdfResource, String[] rootNames, JFrame parent) {
 		if(rdfResource == null || rdfResource.trim().isEmpty() || parent == null)
 			throw new IllegalArgumentException("Args null or empty");
 
 		this.parent = parent;
 		System.out.print("Loading model...");
-		model = FileManager.get().loadModel(rdfResource);
+		model = ModelFactory.createOntologyModel(OntModelSpec.OWL_DL_MEM, FileManager.get().loadModel(rdfResource));
 		if(model != null) {
 			System.out.println("done");
 			ontology = new JenaJungGraph(model);
@@ -111,34 +115,71 @@ public class VisualizationController {
 			GestureManager.getInstance().registerGesture(gestures.get("pan"));
 			GestureManager.getInstance().registerGesture(gestures.get("zoom"));
 
-
-			RDFNode root = null;
-			for(RDFNode n : ontology.getVertices()) {
-				root = n;
-				break;
-			}
-
-			if(root != null) {
-				graph.addVertex(root);
-
-
-				do {
-					Size frameSize = VirtualScreenManager.getInstance().getFrameSize();
-					width = (int) (frameSize.width * VirtualScreenManager.PROJECTED_POSITION_MULTIPLIER);
-					height = (int) (frameSize.height * VirtualScreenManager.PROJECTED_POSITION_MULTIPLIER);
+			List<RDFNode> roots = new ArrayList<RDFNode>();
+			if(rootNames != null) {
+				for(String name : rootNames) {
+					for(RDFNode node : ontology.getVertices()) {
+						if(!node.isAnon() && node.isResource()) {
+							if(name.equalsIgnoreCase(model.qnameFor(node.asResource().getURI()))) {
+								roots.add(node);
+								break;
+							}
+						}
+					}
 				}
-				while(height == 0 || width == 0);
-
-				layout = new FRLayout<RDFNode, Statement>(graph);
-				layout.setSize(new Dimension(width - LAYOUT_BORDER, height - LAYOUT_BORDER));
-				Relaxer relaxer = new VisRunner((IterativeContext)layout);
-				relaxer.stop();
-				relaxer.prerelax();
-
-				Layout<RDFNode, Statement> staticLayout = new StaticLayout<RDFNode, Statement>(graph, layout);
-				viewer = new VisualizationViewer<RDFNode, Statement>(staticLayout, new Dimension(width - FRAME_BORDER, height - FRAME_BORDER));
-				staticLayout.setLocation(root, viewer.getCenter());
 			}
+			
+			if(roots.isEmpty())
+				roots.addAll(OntTools.namedHierarchyRoots(model));
+
+			//			
+			//			for(RDFNode n : ontology.getVertices()) {
+			//				if(!n.isAnon() && n.isResource() && n.asResource().getLocalName().equals("Wine")) {
+			//					root = n;
+			//					break;
+			//				}
+			//			}
+
+			if(roots.isEmpty()) {
+				for(RDFNode n : ontology.getVertices()) {
+					if(!n.isAnon()) {
+						roots.add(n);
+						System.out.println("Added first node found");
+						break;
+					}
+				}
+			}
+
+			for(RDFNode node : roots)
+				graph.addVertex(node);
+
+			for(RDFNode n1 : roots) {
+				for(RDFNode n2: roots) {
+					if(n1 != n2) {
+						Collection<Statement> edges = ontology.findEdgeSet(n1, n2);
+						for(Statement s : edges) {
+							if(!graph.containsEdge(s))
+								graph.addEdge(s, s.getSubject(), s.getObject());
+						}
+					}
+				}
+			}
+
+			do {
+				Size frameSize = VirtualScreenManager.getInstance().getFrameSize();
+				width = (int) (frameSize.width * VirtualScreenManager.PROJECTED_POSITION_MULTIPLIER);
+				height = (int) (frameSize.height * VirtualScreenManager.PROJECTED_POSITION_MULTIPLIER);
+			}
+			while(height == 0 || width == 0);
+
+			layout = new FRLayout<RDFNode, Statement>(graph);
+			layout.setSize(new Dimension(width - LAYOUT_BORDER, height - LAYOUT_BORDER));
+			Relaxer relaxer = new VisRunner((IterativeContext)layout);
+			relaxer.stop();
+			relaxer.prerelax();
+
+			Layout<RDFNode, Statement> staticLayout = new StaticLayout<RDFNode, Statement>(graph, layout);
+			viewer = new VisualizationViewer<RDFNode, Statement>(staticLayout, new Dimension(width - FRAME_BORDER, height - FRAME_BORDER));
 
 			RenderContext<RDFNode, Statement> context = viewer.getRenderContext();
 			context.setEdgeLabelTransformer(Transformers.EDGE);
@@ -161,7 +202,7 @@ public class VisualizationController {
 				public Paint transform(RDFNode node) {
 					boolean picked = viewer.getPickedVertexState().isPicked(node);
 
-					if(graph.getVertices().containsAll(ontology.getNeighbors(node))) {
+					if(!isExpandable(node)) {
 						return picked ? Color.ORANGE : Color.RED;
 					}
 					else {
@@ -170,10 +211,26 @@ public class VisualizationController {
 				}
 			});
 
+			//			context.setEdgeIncludePredicate(arg0);
+
+			//			context.setVertexIncludePredicate(new Predicate<Context<Graph<RDFNode, Statement>, RDFNode>>(){
+			//
+			//				@Override
+			//				public boolean evaluate(Context<Graph<RDFNode, Statement>, RDFNode> ctx) {
+			//					if(ctx.element != null && ctx.element.isResource() && ctx.element.asResource().getNameSpace() != null && ctx.element.asResource().getNameSpace().equals("owl")) {
+			//						System.out.println("ns: " + ctx.element.asResource().getNameSpace());
+			//						return false;
+			//					}
+			//					
+			//					return true;
+			//				}
+			//				
+			//			});
+
 			mouse = new DefaultModalGraphMouse<RDFNode, Statement>();
 			viewer.setGraphMouse(mouse);
 
-			this.parent.getContentPane().add(mouse.getModeComboBox(), BorderLayout.SOUTH);
+//			this.parent.getContentPane().add(mouse.getModeComboBox(), BorderLayout.SOUTH);
 
 			viewer.addPostRenderPaintable(new HandPointRenderer(this.parent, width, height));
 
@@ -181,20 +238,22 @@ public class VisualizationController {
 			this.parent.pack();
 			this.parent.setPreferredSize(viewer.getPreferredSize());
 
+			updateLayout(roots.get(0));
+
 			//setup bindings for gesture events
 
 			gestureActions.put("pan", new GestureListenerAdapter() {
 
 				@Override
-				public void onGestureStarted(GestureData gesture) {
-					Point2D<Float> hand = gesture.getData("initialPosition");
-					int x = hand.getX().intValue();
-					int y = hand.getY().intValue();
+				public synchronized void onGestureStarted(GestureData gesture) {
+					HandData hand = gesture.getHands().get(0);
+					int x = hand.getProjectedPosition().getX().intValue();
+					int y = hand.getProjectedPosition().getY().intValue();
 					mouse.mousePressed(new MouseEvent(viewer, MouseEvent.MOUSE_PRESSED, new Date().getTime(), 0, x, y, 1, false, MouseEvent.BUTTON1));
 				}
 
 				@Override
-				public void onGestureInProgress(GestureData gesture) {
+				public synchronized void onGestureInProgress(GestureData gesture) {
 					HandData hand = gesture.getHands().get(0);
 					int x = hand.getProjectedPosition().getX().intValue();
 					int y = hand.getProjectedPosition().getY().intValue();
@@ -202,7 +261,7 @@ public class VisualizationController {
 				}
 
 				@Override
-				public void onGestureCompleted(GestureData gesture) {
+				public synchronized void onGestureCompleted(GestureData gesture) {
 					HandData hand = gesture.getHands().get(0);
 					int x = hand.getProjectedPosition().getX().intValue();
 					int y = hand.getProjectedPosition().getY().intValue();
@@ -214,7 +273,7 @@ public class VisualizationController {
 			gestureActions.put("swipe-down", new GestureListenerAdapter() {
 
 				@Override
-				public void onGestureCompleted(GestureData gesture) {
+				public synchronized void onGestureCompleted(GestureData gesture) {
 					//expand/collapse all neighbors
 
 					boolean changed = false;
@@ -222,7 +281,8 @@ public class VisualizationController {
 					Set<RDFNode> pickedNodes = viewer.getPickedVertexState().getPicked();
 					for(RDFNode picked : pickedNodes) {
 						central = picked;
-						changed = expandNodes(ontology.getNeighbors(picked));
+						if(isExpandable(picked))
+							changed = expandNodes(ontology.getNeighbors(picked), picked);
 					}
 
 					if(changed)
@@ -233,7 +293,7 @@ public class VisualizationController {
 			gestureActions.put("swipe-up", new GestureListenerAdapter() {
 
 				@Override
-				public void onGestureCompleted(GestureData gesture) {
+				public synchronized void onGestureCompleted(GestureData gesture) {
 					//expand/collapse all neighbors
 
 					boolean changed = false;
@@ -241,7 +301,8 @@ public class VisualizationController {
 					Set<RDFNode> pickedNodes = viewer.getPickedVertexState().getPicked();
 					for(RDFNode picked : pickedNodes) {
 						central = picked;
-						changed = collapseNodes(ontology.getNeighbors(picked), pickedNodes);
+						if(isCollapsible(picked))
+							changed = collapseNodes(ontology.getNeighbors(picked), pickedNodes);
 					}
 
 					if(changed)
@@ -251,7 +312,7 @@ public class VisualizationController {
 
 			gestureActions.put("swipe-left", new GestureListenerAdapter() {
 				@Override
-				public void onGestureCompleted(GestureData gesture) {
+				public synchronized void onGestureCompleted(GestureData gesture) {
 					//expand/collapse only neighbors with incoming edges
 
 					boolean changed = false;
@@ -259,7 +320,8 @@ public class VisualizationController {
 					Set<RDFNode> pickedNodes = viewer.getPickedVertexState().getPicked();
 					for(RDFNode picked : pickedNodes) {
 						central = picked;
-						changed = toggleNodes(ontology.getPredecessors(picked), pickedNodes);
+						if(isExpandable(picked))
+							changed = toggleNodes(ontology.getPredecessors(picked), pickedNodes, picked);
 					}
 
 					if(changed)
@@ -269,7 +331,7 @@ public class VisualizationController {
 
 			gestureActions.put("swipe-right", new GestureListenerAdapter() {
 				@Override
-				public void onGestureCompleted(GestureData gesture) {
+				public synchronized void onGestureCompleted(GestureData gesture) {
 					//expand/collapse only neighbors with incoming edges
 
 					boolean changed = false;
@@ -277,7 +339,8 @@ public class VisualizationController {
 					Set<RDFNode> pickedNodes = viewer.getPickedVertexState().getPicked();
 					for(RDFNode picked : pickedNodes) {
 						central = picked;
-						changed = toggleNodes(ontology.getSuccessors(picked), pickedNodes);
+						if(isExpandable(picked))
+							changed = toggleNodes(ontology.getSuccessors(picked), pickedNodes, picked);
 					}
 
 					if(changed)
@@ -291,7 +354,7 @@ public class VisualizationController {
 				private ScalingControl scaler = new CrossoverScalingControl();
 
 				@Override
-				public void onGestureInProgress(GestureData gesture) {
+				public synchronized void onGestureInProgress(GestureData gesture) {
 					List<HandData> hands = gesture.getHands();
 					if(hands.size() == 2) {
 						if(initialDistance == null) {
@@ -305,7 +368,7 @@ public class VisualizationController {
 				}
 
 				@Override
-				public void onGestureCompleted(GestureData gesture) {
+				public synchronized void onGestureCompleted(GestureData gesture) {
 					initialDistance = null;
 					center = null;
 				}
@@ -316,7 +379,7 @@ public class VisualizationController {
 			ActionManager.getInstance().bind("click", new GestureListenerAdapter() {
 
 				@Override
-				public void onGestureCompleted(GestureData gesture) {
+				public synchronized void onGestureCompleted(GestureData gesture) {
 					Point2D<Float> pos = gesture.getData("initialPosition");
 					mouse.mouseClicked(new MouseEvent(viewer, MouseEvent.MOUSE_CLICKED, new Date().getTime(), 0, pos.getX().intValue(), pos.getY().intValue(), 1, false, MouseEvent.BUTTON1));
 
@@ -335,7 +398,7 @@ public class VisualizationController {
 				}
 			});
 
-			ActionManager.getInstance().bind("swipe-down", gestureActions.get("swipe-down"));
+			//			ActionManager.getInstance().bind("swipe-down", gestureActions.get("swipe-down"));
 
 			GestureManager.getInstance().start();
 			ActionManager.getInstance().start();
@@ -400,7 +463,7 @@ public class VisualizationController {
 			if(lastLayoutSizeThreshold < MAX_NODES_IN_VIEWPORT)
 				lastLayoutSizeThreshold = 0;
 		}
-		
+
 		//increase layout size
 		while(nodes > layoutSizeThreshold) {
 			width *= LAYOUT_SIZE_MULTIPLIER;
@@ -408,9 +471,9 @@ public class VisualizationController {
 			lastLayoutSizeThreshold = layoutSizeThreshold;
 			layoutSizeThreshold *= LAYOUT_SIZE_MULTIPLIER * LAYOUT_SIZE_MULTIPLIER;
 		}
-		
+
 		layout.setSize(new Dimension(width - LAYOUT_BORDER, height - LAYOUT_BORDER));
-		
+
 		layout.initialize();
 
 		Relaxer relaxer = new VisRunner((IterativeContext)layout);
@@ -431,25 +494,23 @@ public class VisualizationController {
 		animator.start();
 	}
 
-	private boolean expandNodes(Collection<RDFNode> nodes) {
+	private boolean expandNodes(Collection<RDFNode> nodes, RDFNode parent) {
 		boolean changed = false;
 		if(nodes.size() > 0) {
-			for(RDFNode n : nodes) {
-				if(!graph.containsVertex(n)) {
-					graph.addVertex(n);
-					changed = true;
+			synchronized(graph) {
+				for(RDFNode n : nodes) {
+					if(!graph.containsVertex(n)) {
+						graph.addVertex(n);
+						changed = true;
+					}
 				}
-			}
 
-			if(changed) {
-				for(RDFNode n1 : graph.getVertices()) {
-					for(RDFNode n2 : graph.getVertices()) {
-						if(n1 != n2) {
-							Collection<Statement> edges = ontology.findEdgeSet(n1, n2);
-							for(Statement s : edges) {
-								if(!graph.containsEdge(s))
-									graph.addEdge(s, s.getSubject(), s.getObject());
-							}
+				if(changed) {
+					for(RDFNode n : nodes) {
+						Collection<Statement> edges = ontology.findEdgeSet(parent, n);
+						for(Statement s : edges) {
+							if(!graph.containsEdge(s))
+								graph.addEdge(s, s.getSubject(), s.getObject());
 						}
 					}
 				}
@@ -464,18 +525,20 @@ public class VisualizationController {
 		boolean changed = false;
 		HashSet<Statement> edgesToRemove = new HashSet<Statement>();
 		if(nodes.size() > 0) {
-			for(RDFNode n : nodes) {
-				if(!pickedNodes.contains(n) && graph.containsVertex(n)) {
-					graph.removeVertex(n);
-					edgesToRemove.addAll(ontology.getIncidentEdges(n));
-					changed = true;
+			synchronized(graph) {
+				for(RDFNode n : nodes) {
+					if(!pickedNodes.contains(n) && graph.containsVertex(n)) {
+						graph.removeVertex(n);
+						edgesToRemove.addAll(ontology.getIncidentEdges(n));
+						changed = true;
+					}
 				}
-			}
 
-			if(changed) {
-				for(Statement s : edgesToRemove) {
-					if(graph.containsEdge(s))
-						graph.removeEdge(s);
+				if(changed) {
+					for(Statement s : edgesToRemove) {
+						if(graph.containsEdge(s))
+							graph.removeEdge(s);
+					}
 				}
 			}
 		}
@@ -483,8 +546,35 @@ public class VisualizationController {
 		return changed;
 	}
 
-	private boolean toggleNodes(Collection<RDFNode> nodes, Collection<RDFNode> pickedNodes) {
-		return graph.getVertices().containsAll(nodes) ? collapseNodes(nodes, pickedNodes) : expandNodes(nodes);
+	private boolean toggleNodes(Collection<RDFNode> nodes, Collection<RDFNode> pickedNodes, RDFNode parent) {
+		return graph.getVertices().containsAll(nodes) ? collapseNodes(nodes, pickedNodes) : expandNodes(nodes, parent);
+	}
+
+	private boolean isExpandable(RDFNode node) {
+		//		if(node.isResource())
+		//			System.out.println("Node: " + node.toString() + ", ns: " + node.asResource().getNameSpace() + ", localName: " + node.asResource().getLocalName());
+
+		if(graph.getVertices().containsAll(ontology.getNeighbors(node)))
+			return false;
+
+		if(!node.isAnon() && node.isResource()) { 
+			String qname = node.getModel().qnameFor(node.asResource().getURI());
+			if(qname != null)
+				return !(qname.startsWith("owl") || qname.startsWith("rdf"));
+		}
+
+
+		return true;
+	}
+
+	private boolean isCollapsible(RDFNode node) {
+		if(!node.isAnon() && node.isResource()) { 
+			String qname = node.getModel().qnameFor(node.asResource().getURI());
+			if(qname != null)
+				return !(qname.startsWith("owl") || qname.startsWith("rdf"));
+		}
+
+		return true;
 	}
 
 }
