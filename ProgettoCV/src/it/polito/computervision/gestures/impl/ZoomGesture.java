@@ -9,6 +9,15 @@ import it.polito.computervision.gestures.GestureState;
 import it.polito.computervision.gestures.TwoHandGesture;
 import it.polito.computervision.virtualscreen.HandData;
 
+/**
+ * Implements a zoom gesture. Can be configured with allowed directions, thresholds and whether it is live or not.
+ * Custom data:
+ * 	-initialDistance: float (the initial distance between the two hands, in mm, when both have touched the screen)
+ * 	-currentDistance: float (the current distance between the two hands, in mm)
+ * 
+ * @author Giovanni Piumatti
+ *
+ */
 public class ZoomGesture extends TwoHandGesture {
 
 	public enum Direction { INWARD, OUTWARD, BOTH }
@@ -20,13 +29,31 @@ public class ZoomGesture extends TwoHandGesture {
 	private Direction direction;
 
 	/**
-	 * Creates a ZoomGesture with the given name
+	 * Creates a ZoomGesture with the given name, both directions allowed, default thresholds, live (zoom).
 	 * @param name The name of this {@link Gesture}.
 	 */
 	public ZoomGesture(String name) {
-		this(name, Direction.BOTH, DETECTION_THRESHOLD, COMPLETION_THRESHOLD, true);
+		this(name, Direction.BOTH, true);
 	}
 
+	/**
+	 * Creates a zoom gesture with the given name, direction, live or not, using default thresholds.
+	 * @param name The name of the gesture
+	 * @param direction The allowed direction
+	 * @param live Whether it is a live gesture or not
+	 */
+	public ZoomGesture(String name, Direction direction, boolean live) {
+		this(name, direction, DETECTION_THRESHOLD, COMPLETION_THRESHOLD, live);
+	}
+	
+	/**
+	 * Creates a completely configurable zoom gesture.
+	 * @param name The name of the gesture
+	 * @param direction The allowed directions
+	 * @param detectionThreshold The difference (in mm in real world coordinates) between initial distance and current distance of the two hands in order to trigger detection
+	 * @param completionThreshold The difference (in mm in real world coordinates) between initial distance and current distance of the two hands in order to trigger completion
+	 * @param live Whether it is a live gesture or not
+	 */
 	public ZoomGesture(String name, Direction direction, float detectionThreshold, float completionThreshold, boolean live) {
 		super(name, live);
 		if(detectionThreshold <= 0)

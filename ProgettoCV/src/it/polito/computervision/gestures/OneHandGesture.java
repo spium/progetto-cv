@@ -2,10 +2,10 @@ package it.polito.computervision.gestures;
 
 import it.polito.computervision.virtualscreen.HandData;
 
-import java.util.Collection;
 import java.util.List;
 
 /**
+ * Implements common functionality of one-handed gestures.
  * One hand gestures work only if there is exactly one hand touching the virtual screen.
  * @author giovanni
  *
@@ -20,13 +20,12 @@ public abstract class OneHandGesture extends AbstractGesture {
 		handId = -1;
 		lastKnownHand = null;
 	}
-
+	
 	@Override
 	protected void doReset() {
 		handId = -1;
 		lastKnownHand = null;
 	}
-
 
 
 	@Override
@@ -84,8 +83,10 @@ public abstract class OneHandGesture extends AbstractGesture {
 
 
 	/**
-	 * Concrete gestures must implement this method. The semantics are the same of {@link Gesture#updateState(Collection, Collection)}.
-	 * @param currentlyTrackedHand The {@link HandData} currently touching the virtual screen or null if no hand is touching
+	 * Concrete gestures must implement this method. The semantics are the same of {@link Gesture#updateState(List,List)}.
+	 * When a hand touches the screen, that becomes the currently tracked hand, and is passed to this method until either a {@link #reset()} is
+	 * called or the hand is lost (not tracked anymore).
+	 * @param currentlyTrackedHand The {@link HandData} currently being tracked for this gesture, or null if no hand is being tracked yet
 	 * @param touchReleased true if the touch was released, false otherwise (i.e. there are more than 1 hand touching)
 	 * @return The {@link GestureState} this gesture is in after the update.
 	 */

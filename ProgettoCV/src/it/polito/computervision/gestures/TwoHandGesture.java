@@ -4,6 +4,11 @@ import it.polito.computervision.virtualscreen.HandData;
 
 import java.util.List;
 
+/**
+ * Implements common functionality for two-handed gestures.
+ * @author Giovanni Piumatti
+ *
+ */
 public abstract class TwoHandGesture extends AbstractGesture {
 
 	private short[] handIds;
@@ -91,7 +96,9 @@ public abstract class TwoHandGesture extends AbstractGesture {
 
 	/**
 	 * Concrete gestures must implement this method. The semantics are the same of {@link Gesture#updateState(List, List)}.
-	 * @param currentlyTrackedHands The {@link HandData} currently touching the virtual screen or null if not exactly 2 hands are touching the screen
+	 * When two hands are touching the screen at the same time, those become the currently tracked hands, and are passed to this method
+	 * until either {@link #reset()} is called or any of the hands is lost (not tracked anymore)
+	 * @param currentlyTrackedHands The {@link HandData} currently being tracked or null if there are no hands being tracked yet. The array will always have a size of 2.
 	 * @return The {@link GestureState} this gesture is in after the update.
 	 */
 	protected abstract GestureState doUpdateState(HandData[] currentlyTrackedHands, boolean touchReleased);

@@ -12,10 +12,10 @@ import it.polito.computervision.virtualscreen.VirtualScreenListener;
 import it.polito.computervision.virtualscreen.VirtualScreenManager;
 
 /**
- * This singleton manages a set of {@link Gesture}s. Invokes on each {@link Gesture#updateState(Collection,Collection)} with the {@link HandData} of the current frame.
- * If a {@link Gesture} is in state IN_PROGRESS, then only that gesture will be updated, and all the others will be {@link Gesture#reset()}.
+ * This singleton manages a set of {@link Gesture}s. Invokes on each {@link Gesture#updateState(List,List)} with the {@link HandData} of the current frame.
+ * If a {@link Gesture} is in state IN_PROGRESS or COMPLETED, then only that gesture will be updated, and all the others will be {@link Gesture#reset()}.
  * It also fires {@link GestureListener} callbacks based on the {@link GestureState} a {@link Gesture} is in after the update.
- * @author giovanni
+ * @author Giovanni Piumatti
  *
  */
 public class GestureManager implements VirtualScreenListener {

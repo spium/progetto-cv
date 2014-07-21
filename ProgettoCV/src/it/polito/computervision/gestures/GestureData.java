@@ -8,7 +8,7 @@ import java.util.Set;
 
 /**
  * Represents data about a 2D gesture
- * @author giovanni
+ * @author Giovanni Piumatti
  *
  */
 public class GestureData {
@@ -23,6 +23,7 @@ public class GestureData {
 	 * @param name The unique name of this gesture
 	 * @param state The state this gesture is in during the current frame
 	 * @param hands The hands this gesture is tracking
+	 * @param data A map of arbitrary gesture-specific data
 	 * @param live Whether the gesture is live or not
 	 */
 	public GestureData(String name, GestureState state, List<HandData> hands, Map<String, Object> data, boolean live) {
@@ -54,15 +55,28 @@ public class GestureData {
 		return hands;
 	}
 	
+	/**
+	 * Returns (already cast to the type T) the data (if any) with the given key.
+	 * @param key The key of the data to retrieve
+	 * @return The data cast to the type T
+	 */
 	@SuppressWarnings("unchecked")
 	public <T> T getData(String key) {
 		return (T) data.get(key);
 	}
 	
+	/**
+	 * Checks if there is data with the given key.
+	 * @param key The key to check
+	 * @return true if there is data associated to the key, false otherwise
+	 */
 	public boolean hasData(String key) {
 		return data.containsKey(key);
 	}
 	
+	/**
+	 * @return A set of all keys that have data bound to them.
+	 */
 	public Set<String> getDataKeys() {
 		return data.keySet();
 	}

@@ -64,6 +64,11 @@ import edu.uci.ics.jung.visualization.control.ScalingControl;
 import edu.uci.ics.jung.visualization.layout.LayoutTransition;
 import edu.uci.ics.jung.visualization.util.Animator;
 
+/**
+ * This class controls most of the behavior of the application. It sets up the graph with the given ontology and binds behavior to the {@link Gesture}s.
+ * @author Giovanni Piumatti
+ *
+ */
 public class VisualizationController {
 
 	public static final int LAYOUT_BORDER = 150;
@@ -307,7 +312,7 @@ public class VisualizationController {
 			gestureActions.put("swipe-right", new GestureListenerAdapter() {
 				@Override
 				public synchronized void onGestureCompleted(GestureData gesture) {
-					//expand/collapse only neighbors with incoming edges
+					//expand/collapse only neighbors with outgoing edges
 
 					boolean changed = false;
 					RDFNode central = null;
@@ -381,10 +386,10 @@ public class VisualizationController {
 			throw new IllegalArgumentException("Could not load model: " + rdfResource);
 	}
 
-	public VisualizationViewer<RDFNode, Statement> getViewer() {
-		return viewer;
-	}
-
+	/**
+	 * Toggles between picked mode and normal mode. In normal mode pan gesture is bound. In picked mode swipe gestures are.
+	 * @param how true to switch to picked mode, false to normal mode.
+	 */
 	private void setPickedMode(boolean how) {
 		ActionManager am = ActionManager.getInstance();
 		GestureManager gm = GestureManager.getInstance();
@@ -426,6 +431,10 @@ public class VisualizationController {
 		}
 	}
 
+	/**
+	 * Updates the graph layout with an animated transition, and optionally centers the view to the given node.
+	 * @param central The node to center the view to (can be null).
+	 */
 	private void updateLayout(RDFNode central) {
 		int nodes = graph.getVertexCount();
 		//decrease layout size
@@ -468,6 +477,12 @@ public class VisualizationController {
 		animator.start();
 	}
 
+	/**
+	 * Inserts in the graph the given nodes
+	 * @param nodes The nodes to insert
+	 * @param parent The parent node
+	 * @return true if the graph has changed, false otherwise (no nodes where added)
+	 */
 	private boolean expandNodes(Collection<RDFNode> nodes, RDFNode parent) {
 		boolean changed = false;
 		if(nodes.size() > 0) {
@@ -493,6 +508,12 @@ public class VisualizationController {
 
 	}
 
+	/**
+	 * Removes from the graph the given nodes, except for the ones that are picked.
+	 * @param nodes The nodes to remove
+	 * @param pickedNodes The picked nodes
+	 * @return true if the graph has changed, false otherwise (no node was removed).
+	 */
 	private boolean collapseNodes(Collection<RDFNode> nodes, Collection<RDFNode> pickedNodes) {
 		boolean changed = false;
 		HashSet<Statement> edgesToRemove = new HashSet<Statement>();
@@ -516,10 +537,22 @@ public class VisualizationController {
 		return changed;
 	}
 
+	/**
+	 * Expands/collapses nodes based on the current state
+	 * @param nodes The nodes to add/remove
+	 * @param pickedNodes The picked nodes
+	 * @param parent The parent node
+	 * @return true if the graph has changed, false otherwise
+	 */
 	private boolean toggleNodes(Collection<RDFNode> nodes, Collection<RDFNode> pickedNodes, RDFNode parent) {
 		return graph.getVertices().containsAll(nodes) ? collapseNodes(nodes, pickedNodes) : expandNodes(nodes, parent);
 	}
 
+	/**
+	 * Checks if the node is expandable based on various criteria
+	 * @param node The node to check
+	 * @return true if the node can be expanded, false otherwise
+	 */
 	private boolean isExpandable(RDFNode node) {
 		if(graph.getVertices().containsAll(ontology.getNeighbors(node)))
 			return false;
@@ -534,6 +567,11 @@ public class VisualizationController {
 		return true;
 	}
 
+	/**
+	 * Checks if the node is collapsible based on various criteria
+	 * @param node The node to check
+	 * @return true if the node can be collapsed, false otherwise
+	 */
 	private boolean isCollapsible(RDFNode node) {
 		if(!node.isAnon() && node.isResource()) { 
 			String qname = node.getModel().qnameFor(node.asResource().getURI());

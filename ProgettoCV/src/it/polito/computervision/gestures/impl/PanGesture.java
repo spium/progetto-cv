@@ -13,8 +13,11 @@ import it.polito.computervision.gestures.OneHandGesture;
 import it.polito.computervision.virtualscreen.HandData;
 
 /**
+ * Implements a pan or swipe gesture. Can be configured with allowed directions, thresholds and can be either live or non-live.
+ * Custom data:
+ * 	- initialPosition: Point2D<Float> (the projected position where the hand touched the screen first)
  * 
- * @author giovanni
+ * @author Giovanni Piumatti
  *
  */
 public class PanGesture extends OneHandGesture {
@@ -31,20 +34,29 @@ public class PanGesture extends OneHandGesture {
 	private EnumSet<Direction> directions;
 	private Point2D<Float> initialPosition;
 
+	/**
+	 * Creates a pan gesture with the given name, all directions allowed, default thresholds, live (pan).
+	 * @param name The name of this gesture
+	 */
 	public PanGesture(String name) {
 		this(name, EnumSet.allOf(Direction.class), DETECTION_THRESHOLD, COMPLETION_THRESHOLD, true);
 	}
 	
+	/**
+	 * Creates a pan gesture with the given name, allowed directions, live or not. Uses default thresholds.
+	 * @param name The name of the gesture
+	 * @param directions The set of allowed directions
+	 * @param live Whether this is a live gesture or not
+	 */
 	public PanGesture(String name, EnumSet<Direction> directions, boolean live) {
 		this(name, directions, DETECTION_THRESHOLD, COMPLETION_THRESHOLD, live);
 	}
 	/**
-	 * Creates a PanGesture with the given name
+	 * Creates a PanGesture with the given name, all other options configurable
 	 * @param name The name of this {@link Gesture}.
 	 * @param directions The directions allowed for this gesture
 	 * @param detectionThreshold The distance (in mm in real world coordinates) the hand has to travel before triggering detection
 	 * @param completionThreshold The distance (in mm in real world coordinates) the hand has to travel before triggering completion
-	 * @param delayFrames The number of frames to delay detection after the gesture has completed
 	 * @param live Whether this is a live gesture or not
 	 */
 	public PanGesture(String name, EnumSet<Direction> directions, float detectionThreshold, float completionThreshold, boolean live) {

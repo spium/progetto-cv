@@ -23,7 +23,7 @@ public interface VirtualScreen {
 	public void setSize(Size size);
 	/**
 	 * 
-	 * @return the depth of the virtual screen (i.e. its distance from the origin of the world coordinate system along the Z axis)
+	 * @return the depth of the virtual screen (i.e. its distance from the origin of the world coordinate system (the sensor) along the Z axis)
 	 */
 	public float getDepth();
 	/**

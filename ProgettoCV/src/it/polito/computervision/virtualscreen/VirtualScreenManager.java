@@ -17,7 +17,7 @@ import com.primesense.nite.Point3D;
 
 /**
  * Singleton that manages the virtual screen. It needs to be initialized with a {@link VirtualScreen} and a {@link VirtualScreenInitializer}.
- * It updates {@link VirtualScreenListener}s on each frame with the updated {@link HandData}.
+ * It updates {@link VirtualScreenListener}s on each frame with the current {@link HandData}.
  * @author giovanni
  *
  */

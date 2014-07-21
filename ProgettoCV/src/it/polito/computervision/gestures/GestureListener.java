@@ -2,7 +2,7 @@ package it.polito.computervision.gestures;
 
 /**
  * This interface is implemented by classes who want to be updated about a gesture's current state at each frame.
- * @author giovanni
+ * @author Giovanni Piumatti
  *
  */
 public interface GestureListener {

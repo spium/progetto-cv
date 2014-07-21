@@ -12,9 +12,10 @@ import it.polito.computervision.virtualscreen.VirtualScreen;
 import it.polito.computervision.virtualscreen.AbstractVirtualScreen;
 
 /**
- * A simple flat {@link VirtualScreen}. A {@link Point3D} is touching if its z coordinate is <= depth.
+ * A simple flat {@link VirtualScreen}. A {@link Point3D} is touching if its Z-coordinate is <= depth.
  * The 2D projection is simply the input point with z = 0.
- * @author giovanni
+ * This implementation does not take into consideration the screen size (i.e. size is infinite)
+ * @author Giovanni Piumatti
  *
  */
 public class FlatVirtualScreen extends AbstractVirtualScreen {

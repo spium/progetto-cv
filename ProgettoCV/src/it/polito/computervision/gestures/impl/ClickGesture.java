@@ -6,12 +6,13 @@ import it.polito.computervision.gestures.Gesture;
 import it.polito.computervision.gestures.GestureState;
 import it.polito.computervision.gestures.OneHandGesture;
 import it.polito.computervision.virtualscreen.HandData;
-import it.polito.computervision.virtualscreen.VirtualScreen;
 
 /**
- * Detects a click with one hand. If multiple hands are being detected, the first one that is found touching the {@link VirtualScreen} will
- * be the one tracked for a click.
- * @author giovanni
+ * Detects a click. That is, a single hand touched the screen, then released touch.
+ * Custom data:
+ * 	- initialPosition: Point2D<Float> (the projected position where the hand touched the screen first)
+ * 
+ * @author Giovanni Piumatti
  *
  */
 public class ClickGesture extends OneHandGesture {

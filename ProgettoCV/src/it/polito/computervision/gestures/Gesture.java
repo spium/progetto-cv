@@ -7,14 +7,14 @@ import java.util.Map;
 
 /**
  * Represents a 2D gesture.
- * @author giovanni
+ * @author Giovanni Piumatti
  *
  */
 public interface Gesture {
 	/**
 	 * Updates the state of the gesture
-	 * @param hands The set of {@link HandData} of the new frame
-	 * @param gestureHands (out) The set of {@link HandData} this gesture is tracking
+	 * @param hands The list of {@link HandData} of the new frame
+	 * @param gestureHands (out) The list of {@link HandData} this gesture is tracking
 	 * @return the {@link GestureState} this gesture is in after the call
 	 */
 	public GestureState updateState(List<HandData> hands, List<HandData> gestureHands);

@@ -14,6 +14,11 @@ import org.openni.Point2D;
 
 import edu.uci.ics.jung.visualization.VisualizationServer.Paintable;
 
+/**
+ * Draws the tracked hands on top of the graph.
+ * @author Giovanni Piumatti
+ *
+ */
 public class HandPointRenderer implements Paintable, VirtualScreenListener {
 
 	private JFrame mFrame;

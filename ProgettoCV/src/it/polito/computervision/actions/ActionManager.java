@@ -16,7 +16,7 @@ import it.polito.computervision.gestures.GestureManager;
  * Singleton that acts as a dispatcher for {@link Gesture} events.
  * Only one {@link GestureListener} can be bound to a specific {@link Gesture} at any time.
  * 
- * @author giovanni
+ * @author Giovanni Piumatti
  *
  */
 public class ActionManager implements GestureListener {
@@ -68,6 +68,11 @@ public class ActionManager implements GestureListener {
 		bindings.remove(gestureName);
 	}
 	
+	/**
+	 * Checks if the {@link Gesture} with the given name is bound to a {@link GestureListener}
+	 * @param gestureName The name of the {@link Gesture}
+	 * @return true if a gesture with such name is bound to a listener, false otherwise
+	 */
 	public synchronized boolean isBound(String gestureName) {
 		return bindings.containsKey(gestureName);
 	}

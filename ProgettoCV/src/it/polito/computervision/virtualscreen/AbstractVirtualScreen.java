@@ -16,7 +16,7 @@ public abstract class AbstractVirtualScreen implements VirtualScreen {
 	
 	/**
 	 * Initializes an empty virtual screen. Size and depth are set to illegal values.
-	 * The will need to be set before using this virtual screen instance.
+	 * They will need to be set before using this virtual screen instance.
 	 */
 	public AbstractVirtualScreen() {
 		this(null, -1.f);
@@ -25,7 +25,7 @@ public abstract class AbstractVirtualScreen implements VirtualScreen {
 	/**
 	 * Initializes the virtual screen with the given size and depth
 	 * @param size The size of the virtual screen
-	 * @param depth The depth of the virtual screen
+	 * @param depth The depth of the virtual screen (distance from the sensor)
 	 */
 	public AbstractVirtualScreen(Size size, float depth) {
 		this.size = size;
