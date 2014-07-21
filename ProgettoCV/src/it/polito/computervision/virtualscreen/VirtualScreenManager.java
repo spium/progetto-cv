@@ -24,7 +24,7 @@ import com.primesense.nite.Point3D;
 public class VirtualScreenManager implements NewFrameListener {
 
 	private static final GestureType GESTURE_TYPE = GestureType.HAND_RAISE;
-	public static final float PROJECTED_POSITION_MULTIPLIER = 1.8f;
+	public static final float PROJECTED_POSITION_MULTIPLIER = 2.f;
 
 	private static VirtualScreenManager instance = null;
 
@@ -150,7 +150,7 @@ public class VirtualScreenManager implements NewFrameListener {
 	}
 
 	public synchronized Size getFrameSize() {
-		return lastFrame != null ? new Size(lastFrame.getDepthFrame().getWidth(), lastFrame.getDepthFrame().getHeight()) : new Size(0,0);
+		return lastFrame != null ? new Size(lastFrame.getDepthFrame().getWidth()*PROJECTED_POSITION_MULTIPLIER, lastFrame.getDepthFrame().getHeight()*PROJECTED_POSITION_MULTIPLIER) : new Size(0,0);
 	}
 	
 	/**

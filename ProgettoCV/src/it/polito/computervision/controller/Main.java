@@ -92,7 +92,7 @@ public class Main {
 		Device.open(devicesInfo.get(0).getUri());
 
 		VirtualScreenManager.getInstance().start(2);
-		VirtualScreenManager.getInstance().initialize(new FlatVirtualScreen(), new StaticVirtualScreenInitializer(new Size(1,1), 1500));		
+		VirtualScreenManager.getInstance().initialize(new FlatVirtualScreen(), new StaticVirtualScreenInitializer(new Size(1,1), 1300));		
 
 		String[] roots = null;
 		if(argv.length > 1) {

@@ -128,17 +128,10 @@ public class VisualizationController {
 					}
 				}
 			}
-			
+
 			if(roots.isEmpty())
 				roots.addAll(OntTools.namedHierarchyRoots(model));
 
-			//			
-			//			for(RDFNode n : ontology.getVertices()) {
-			//				if(!n.isAnon() && n.isResource() && n.asResource().getLocalName().equals("Wine")) {
-			//					root = n;
-			//					break;
-			//				}
-			//			}
 
 			if(roots.isEmpty()) {
 				for(RDFNode n : ontology.getVertices()) {
@@ -167,8 +160,8 @@ public class VisualizationController {
 
 			do {
 				Size frameSize = VirtualScreenManager.getInstance().getFrameSize();
-				width = (int) (frameSize.width * VirtualScreenManager.PROJECTED_POSITION_MULTIPLIER);
-				height = (int) (frameSize.height * VirtualScreenManager.PROJECTED_POSITION_MULTIPLIER);
+				width = (int) frameSize.width;
+				height = (int) frameSize.height;
 			}
 			while(height == 0 || width == 0);
 
@@ -211,26 +204,8 @@ public class VisualizationController {
 				}
 			});
 
-			//			context.setEdgeIncludePredicate(arg0);
-
-			//			context.setVertexIncludePredicate(new Predicate<Context<Graph<RDFNode, Statement>, RDFNode>>(){
-			//
-			//				@Override
-			//				public boolean evaluate(Context<Graph<RDFNode, Statement>, RDFNode> ctx) {
-			//					if(ctx.element != null && ctx.element.isResource() && ctx.element.asResource().getNameSpace() != null && ctx.element.asResource().getNameSpace().equals("owl")) {
-			//						System.out.println("ns: " + ctx.element.asResource().getNameSpace());
-			//						return false;
-			//					}
-			//					
-			//					return true;
-			//				}
-			//				
-			//			});
-
 			mouse = new DefaultModalGraphMouse<RDFNode, Statement>();
 			viewer.setGraphMouse(mouse);
-
-//			this.parent.getContentPane().add(mouse.getModeComboBox(), BorderLayout.SOUTH);
 
 			viewer.addPostRenderPaintable(new HandPointRenderer(this.parent, width, height));
 
@@ -381,15 +356,16 @@ public class VisualizationController {
 				@Override
 				public synchronized void onGestureCompleted(GestureData gesture) {
 					Point2D<Float> pos = gesture.getData("initialPosition");
-					mouse.mouseClicked(new MouseEvent(viewer, MouseEvent.MOUSE_CLICKED, new Date().getTime(), 0, pos.getX().intValue(), pos.getY().intValue(), 1, false, MouseEvent.BUTTON1));
 
 					RDFNode clicked = viewer.getPickSupport().getVertex(viewer.getGraphLayout(), pos.getX().intValue(), pos.getY().intValue());
+					boolean wasPicked = clicked != null && viewer.getPickedVertexState().isPicked(clicked);
+
 					//clear picked vertices
 					viewer.getPickedVertexState().clear();
 					if(clicked != null) {
 
 						//pick the clicked vertex
-						viewer.getPickedVertexState().pick(clicked, true);
+						viewer.getPickedVertexState().pick(clicked, !wasPicked);
 
 						updateLayout(clicked);
 					}
@@ -397,8 +373,6 @@ public class VisualizationController {
 					setPickedMode(!viewer.getPickedVertexState().getPicked().isEmpty());
 				}
 			});
-
-			//			ActionManager.getInstance().bind("swipe-down", gestureActions.get("swipe-down"));
 
 			GestureManager.getInstance().start();
 			ActionManager.getInstance().start();
@@ -497,21 +471,19 @@ public class VisualizationController {
 	private boolean expandNodes(Collection<RDFNode> nodes, RDFNode parent) {
 		boolean changed = false;
 		if(nodes.size() > 0) {
-			synchronized(graph) {
-				for(RDFNode n : nodes) {
-					if(!graph.containsVertex(n)) {
-						graph.addVertex(n);
-						changed = true;
-					}
+			for(RDFNode n : nodes) {
+				if(!graph.containsVertex(n)) {
+					graph.addVertex(n);
+					changed = true;
 				}
+			}
 
-				if(changed) {
-					for(RDFNode n : nodes) {
-						Collection<Statement> edges = ontology.findEdgeSet(parent, n);
-						for(Statement s : edges) {
-							if(!graph.containsEdge(s))
-								graph.addEdge(s, s.getSubject(), s.getObject());
-						}
+			if(changed) {
+				for(RDFNode n : nodes) {
+					Collection<Statement> edges = ontology.findEdgeSet(parent, n);
+					for(Statement s : edges) {
+						if(!graph.containsEdge(s))
+							graph.addEdge(s, s.getSubject(), s.getObject());
 					}
 				}
 			}
@@ -525,20 +497,18 @@ public class VisualizationController {
 		boolean changed = false;
 		HashSet<Statement> edgesToRemove = new HashSet<Statement>();
 		if(nodes.size() > 0) {
-			synchronized(graph) {
-				for(RDFNode n : nodes) {
-					if(!pickedNodes.contains(n) && graph.containsVertex(n)) {
-						graph.removeVertex(n);
-						edgesToRemove.addAll(ontology.getIncidentEdges(n));
-						changed = true;
-					}
+			for(RDFNode n : nodes) {
+				if(!pickedNodes.contains(n) && graph.containsVertex(n)) {
+					graph.removeVertex(n);
+					edgesToRemove.addAll(ontology.getIncidentEdges(n));
+					changed = true;
 				}
+			}
 
-				if(changed) {
-					for(Statement s : edgesToRemove) {
-						if(graph.containsEdge(s))
-							graph.removeEdge(s);
-					}
+			if(changed) {
+				for(Statement s : edgesToRemove) {
+					if(graph.containsEdge(s))
+						graph.removeEdge(s);
 				}
 			}
 		}
@@ -551,9 +521,6 @@ public class VisualizationController {
 	}
 
 	private boolean isExpandable(RDFNode node) {
-		//		if(node.isResource())
-		//			System.out.println("Node: " + node.toString() + ", ns: " + node.asResource().getNameSpace() + ", localName: " + node.asResource().getLocalName());
-
 		if(graph.getVertices().containsAll(ontology.getNeighbors(node)))
 			return false;
 
