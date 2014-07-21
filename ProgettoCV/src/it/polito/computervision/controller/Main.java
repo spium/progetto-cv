@@ -10,12 +10,12 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 
-import org.apache.jena.atlas.lib.ArrayUtils;
 import org.opencv.core.Core;
 import org.opencv.core.Size;
 import org.openni.Device;
@@ -26,8 +26,10 @@ import com.primesense.nite.NiTE;
 
 public class Main {
 
+	private static final int DEFAULT_VSCREEN_DISTANCE = 1500;
 	private JFrame mFrame;
 	private boolean mShouldRun = true;
+	@SuppressWarnings("unused")
 	private VisualizationController controller;
 
 	public Main(String resource, String[] roots) {
@@ -56,9 +58,9 @@ public class Main {
 				mShouldRun = false;
 			}
 		});
-		
+
 		controller = new VisualizationController(resource, roots, mFrame);
-		
+
 		mFrame.setVisible(true);
 	}
 
@@ -75,9 +77,38 @@ public class Main {
 
 	public static void main(String argv[]) {
 		if(argv.length < 1) {
-			System.err.println("You must specify the ontology file");
+			System.err.println("Syntax: <ontology> [rootNodes] [virtualScreenDistance]");
+			System.err.println("ontology: path to the ontology");
+			System.err.println("rootNodes: names of the root nodes to start navigation from (default: hierarchy root)");
+			System.err.println("virtualScreenDistance: distance of the virtual screen from the sensor (default: 1.5 meters)");
+
 			return;
 		}
+
+		String[] roots = null;
+		int dist = DEFAULT_VSCREEN_DISTANCE;
+		if(argv.length > 1) {
+			ArrayList<String> rootList = new ArrayList<String>();
+			for(int i = 1; i < argv.length; ++i) {
+				try {
+					dist = (int) (Float.parseFloat(argv[i])*1000); //convert to mm
+					if(dist <= 500) {
+						System.err.println("Virtual screen distance must be > 0.5 meters");
+						return;
+					}
+					//distance should be the last parameter
+					break;
+				}
+				catch(NumberFormatException e) {
+					//if it's not a number then assume it's the name of a root
+					rootList.add(argv[i]);
+				}
+			}
+
+			if(rootList.size() > 0)
+				roots = rootList.toArray(new String[rootList.size()]);
+		}
+
 		// initialize OpenNI and NiTE
 		System.loadLibrary(Core.NATIVE_LIBRARY_NAME);
 		OpenNI.initialize();
@@ -92,20 +123,14 @@ public class Main {
 		Device.open(devicesInfo.get(0).getUri());
 
 		VirtualScreenManager.getInstance().start(2);
-		VirtualScreenManager.getInstance().initialize(new FlatVirtualScreen(), new StaticVirtualScreenInitializer(new Size(1,1), 1300));		
+		//size doesn't matter in this implementation
+		VirtualScreenManager.getInstance().initialize(new FlatVirtualScreen(), new StaticVirtualScreenInitializer(new Size(1,1), dist));		
 
-		String[] roots = null;
-		if(argv.length > 1) {
-			roots = new String[argv.length - 1];
-			for(int i = 0; i < argv.length-1; ++i)
-				roots[i] = argv[i+1];
-		}
-		
 		final Main app = new Main(argv[0], roots);
-				
+
 		System.out.println("About to run");
 		app.run();
-		
+
 		ActionManager.getInstance().stop();
 		GestureManager.getInstance().stop();
 		VirtualScreenManager.getInstance().destroy();
